@@ -17,6 +17,10 @@ Get an API KEY:
         -d "password=password"
 ```
 
+### Examples
+
+Please see: https://github.com/deferpanic/deferexample
+
 ### Documentation
 
 See https://godoc.org/github.com/deferpanic/deferclient for documentation.
