@@ -1,3 +1,4 @@
+// Package errors implements deferpanic error logging.
 // graciously stolen from dropbox
 package errors
 

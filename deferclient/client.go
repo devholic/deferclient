@@ -1,3 +1,4 @@
+// Package deferclient implements access to the deferpanic api.
 package deferclient
 
 import (
@@ -10,24 +11,33 @@ import (
 )
 
 const (
-	api_url = "https://api.deferpanic.com/v1/panics/create"
+	apiUrl = "https://api.deferpanic.com/v1/panics/create"
 )
 
+// Your deferpanic client token
 var Token string
+
+// Bool that turns off tracking of errors and panics - useful for
+// dev/test environments
 var NoPost = false
 
+// struct that holds expected json body for POSTing to deferpanic API v1
 type DeferJSON struct {
 	Msg       string `json:"ErrorName"`
 	BackTrace string `json:"Body"`
 	GoVersion string `json:"Version"`
 }
 
+// Persists ensures any panics will post to deferpanic website for
+// tracking
 func Persist() {
 	if err := recover(); err != nil {
 		prep(err)
 	}
 }
 
+// recovers from http handler panics and posts to deferpanic website for
+// tracking
 func PanicRecover(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -62,19 +72,20 @@ func cleanTrace(body string) string {
 	return body
 }
 
+// ShipTrace POSTs a DeferJSON json body to the deferpanic website
 func ShipTrace(exception string, errorstr string) {
 	if NoPost {
 		return
 	}
 
-	go_version := runtime.Version()
+	goVersion := runtime.Version()
 
 	body := cleanTrace(exception)
 
-	dj := &DeferJSON{Msg: errorstr, BackTrace: body, GoVersion: go_version}
+	dj := &DeferJSON{Msg: errorstr, BackTrace: body, GoVersion: goVersion}
 	b, err := json.Marshal(dj)
 
-	req, err := http.NewRequest("POST", api_url, bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(b))
 	req.Header.Set("X-deferid", Token)
 	req.Header.Set("Content-Type", "application/json")
 
