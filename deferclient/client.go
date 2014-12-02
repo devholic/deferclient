@@ -11,7 +11,9 @@ import (
 )
 
 const (
-	apiUrl = "https://api.deferpanic.com/v1/panics/create"
+	apiUrl = "http://127.0.0.1:8080/v1/panics/create"
+
+	// apiUrl = "https://api.deferpanic.com/v1/panics/create"
 )
 
 // Your deferpanic client token
