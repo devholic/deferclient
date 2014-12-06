@@ -21,7 +21,7 @@ const (
 var Token string
 
 type DeferHTTP struct {
-	Uri  string `json:Uri"`
+	Path string `json:Uri"`
 	Time int    `json:Time"`
 }
 
@@ -69,7 +69,11 @@ func capture() {
 	ds := DeferStats{
 		Mem:        strconv.FormatUint(mem.Alloc, 10),
 		GoRoutines: strconv.Itoa(runtime.NumGoroutine()),
+		HTTPs:      curlist,
 	}
+
+	// empty our https
+	curlist = []DeferHTTP{}
 
 	ShipStats(ds)
 
