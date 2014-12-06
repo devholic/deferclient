@@ -20,10 +20,16 @@ const (
 
 var Token string
 
+type DeferHTTP struct {
+	Uri  string `json:Uri"`
+	Time int    `json:Time"`
+}
+
 type DeferStats struct {
-	Mem        string `json:Mem"`
-	GC         string `json:GC"`
-	GoRoutines string `json:"GoRoutines"`
+	Mem        string      `json:Mem"`
+	GC         string      `json:GC"`
+	GoRoutines string      `json:"GoRoutines"`
+	HTTPs      []DeferHTTP `json:"HTTPs"`
 }
 
 // CaptureStats POSTs DeferStats every
