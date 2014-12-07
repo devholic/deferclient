@@ -1,7 +1,6 @@
 package deferstats
 
 import (
-	"log"
 	"net/http"
 	"time"
 )

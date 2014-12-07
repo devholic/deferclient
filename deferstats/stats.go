@@ -1,6 +1,8 @@
 package deferstats
 
 import (
+	"runtime/debug"
+
 	"bytes"
 	"encoding/json"
 	"log"
@@ -45,8 +47,6 @@ func CaptureStats() {
 func ShipStats(stats DeferStats) {
 	b, err := json.Marshal(stats)
 
-	log.Println("post")
-
 	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(b))
 	req.Header.Set("X-deferid", Token)
 	req.Header.Set("Content-Type", "application/json")
@@ -64,12 +64,15 @@ func ShipStats(stats DeferStats) {
 func capture() {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
-	log.Println("posting")
+
+	var gc debug.GCStats
+	debug.ReadGCStats(&gc)
 
 	ds := DeferStats{
 		Mem:        strconv.FormatUint(mem.Alloc, 10),
 		GoRoutines: strconv.Itoa(runtime.NumGoroutine()),
 		HTTPs:      curlist,
+		GC:         strconv.FormatInt(gc.NumGC, 10),
 	}
 
 	// empty our https
