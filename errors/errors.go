@@ -46,7 +46,7 @@ func Wrap(err error, msg string) DeferPanicError {
 
 func New(msg string) DeferPanicError {
 	stack := BackTrace()
-	deferclient.ShipTrace(stack, msg)
+	go deferclient.ShipTrace(stack, msg)
 
 	return &DeferPanicBaseError{
 		Msg:       msg,
