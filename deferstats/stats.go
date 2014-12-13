@@ -14,19 +14,22 @@ import (
 
 // fixme
 const (
-	statsFrequency = 250 * time.Millisecond
-	apiUrl         = "http://127.0.0.1:8080/v1/stats/create"
-
-	// apiUrl = "https://api.deferpanic.com/v1/panics/create"
+	// statsFrequency controls how often to report into deferpanic
+	statsFrequency = 60 * time.Second
+	// apiUrl is the stats api endpoint
+	apiUrl = "https://api.deferpanic.com/v1/stats/create"
 )
 
+// Token is your deferpanic token available in settings
 var Token string
 
+// DeferHTTP holds the path uri and latency for each request
 type DeferHTTP struct {
 	Path string `json:Uri"`
 	Time int    `json:Time"`
 }
 
+// DeferStats captures {mem, gc, goroutines and http calls}
 type DeferStats struct {
 	Mem        string      `json:Mem"`
 	GC         string      `json:GC"`
@@ -78,6 +81,6 @@ func capture() {
 	// empty our https
 	curlist = []DeferHTTP{}
 
-	ShipStats(ds)
+	go ShipStats(ds)
 
 }

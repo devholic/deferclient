@@ -5,8 +5,11 @@ import (
 	"time"
 )
 
+// curlist holds an array of DeferHTTPs (uri && latency)
 var curlist []DeferHTTP
 
+// HTTPHandler wraps a http handler and captures the latency of each
+// request
 func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
