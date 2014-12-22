@@ -29,12 +29,20 @@ type DeferHTTP struct {
 	Time int    `json:Time"`
 }
 
+// DeferDB holds the query and latency for each sql query whose
+// threshold was overran
+type DeferDB struct {
+	Query string `json:Query"`
+	Time  int    `json:Time"`
+}
+
 // DeferStats captures {mem, gc, goroutines and http calls}
 type DeferStats struct {
 	Mem        string      `json:Mem"`
 	GC         string      `json:GC"`
 	GoRoutines string      `json:"GoRoutines"`
 	HTTPs      []DeferHTTP `json:"HTTPs"`
+	DBs        []DeferDB   `json:"DBs"`
 }
 
 // CaptureStats POSTs DeferStats every
@@ -75,11 +83,13 @@ func capture() {
 		Mem:        strconv.FormatUint(mem.Alloc, 10),
 		GoRoutines: strconv.Itoa(runtime.NumGoroutine()),
 		HTTPs:      curlist,
+		DBs:        querylist,
 		GC:         strconv.FormatInt(gc.NumGC, 10),
 	}
 
-	// empty our https
+	// empty our https/dbs
 	curlist = []DeferHTTP{}
+	querylist = []DeferDB{}
 
 	go ShipStats(ds)
 
