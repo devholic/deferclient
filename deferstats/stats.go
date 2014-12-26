@@ -1,13 +1,12 @@
 package deferstats
 
 import (
-	"runtime/debug"
-
 	"bytes"
 	"encoding/json"
 	"log"
 	"net/http"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"time"
 )
@@ -16,6 +15,7 @@ import (
 const (
 	// statsFrequency controls how often to report into deferpanic
 	statsFrequency = 60 * time.Second
+
 	// apiUrl is the stats api endpoint
 	apiUrl = "https://api.deferpanic.com/v1/stats/create"
 )
