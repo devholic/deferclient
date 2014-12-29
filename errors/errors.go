@@ -3,6 +3,7 @@
 package errors
 
 import (
+	"fmt"
 	"github.com/deferpanic/deferclient/deferclient"
 	"runtime"
 )
@@ -23,12 +24,19 @@ func (e *DeferPanicBaseError) GetBackTrace() string {
 	return e.BackTrace
 }
 
-func BackTrace() string {
-	buf := make([]byte, 1<<16)
-	runtime.Stack(buf, false)
+func BackTrace() (body string) {
 
-	sz := len(buf) - 1
-	body := string(buf[:sz])
+	for skip := 1; ; skip++ {
+		pc, file, line, ok := runtime.Caller(skip)
+		if !ok {
+			break
+		}
+		if file[len(file)-1] == 'c' {
+			continue
+		}
+		f := runtime.FuncForPC(pc)
+		body += fmt.Sprintf("%s:%d %s()\n", file, line, f.Name())
+	}
 
 	return body
 }
