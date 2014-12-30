@@ -1,6 +1,7 @@
 package deferstats
 
 import (
+	"github.com/deferpanic/deferclient/deferclient"
 	"net/http"
 	"time"
 )
@@ -12,6 +13,14 @@ var curlist []DeferHTTP
 // request
 func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				// hack
+				deferclient.Token = Token
+				deferclient.Prep(err)
+			}
+		}()
+
 		startTime := time.Now()
 		f(w, r)
 		endTime := time.Now()
