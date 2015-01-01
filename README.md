@@ -19,6 +19,12 @@ Get an API KEY:
 
 ### Examples
 
+Here we have 4 examples:
+* log a fast request
+* log a slow request
+* log an error
+* log a panic
+
 ```go
 package main
 
