@@ -32,7 +32,7 @@ type DeferJSON struct {
 // tracking
 func Persist() {
 	if err := recover(); err != nil {
-		prep(err)
+		Prep(err)
 	}
 }
 
@@ -42,24 +42,32 @@ func PanicRecover(f func(w http.ResponseWriter, r *http.Request)) func(w http.Re
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				prep(err)
+				Prep(err)
 			}
 		}()
 		f(w, r)
 	}
 }
 
-func prep(err interface{}) {
+func Prep(err interface{}) {
 	errorMsg := fmt.Sprintf("%q", err)
 
 	errorMsg = strings.Replace(errorMsg, "\"", "", -1)
 
-	buf := make([]byte, 1<<16)
-	runtime.Stack(buf, false)
-	sz := len(buf) - 1
-	body := string(buf[:sz])
+	body := ""
+	for skip := 1; ; skip++ {
+		pc, file, line, ok := runtime.Caller(skip)
+		if !ok {
+			break
+		}
+		if file[len(file)-1] == 'c' {
+			continue
+		}
+		f := runtime.FuncForPC(pc)
+		body += fmt.Sprintf("%s:%d %s()\n", file, line, f.Name())
+	}
 
-	ShipTrace(body, errorMsg)
+	go ShipTrace(body, errorMsg)
 }
 
 // encoding
