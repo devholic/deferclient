@@ -72,6 +72,42 @@ func main() {
 }
 ```
 
+The client works perfectly fine in non-HTTP applications:
+
+Here we log both an error and a panic.
+
+```
+package main
+
+import (
+        "fmt"
+        "github.com/deferpanic/deferclient/deferclient"
+        "github.com/deferpanic/deferclient/errors"
+        "time"
+)
+
+func errorTest() {
+        err := errors.New("erroring out!")
+        if err != nil {
+                fmt.Println(err)
+        }
+}
+
+func panicTest() {
+        defer deferclient.Persist()
+        panic("there is no need to panic")
+}
+
+func main() {
+        deferclient.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+        errorTest()
+        panicTest()
+
+        time.Sleep(time.Second * 20)
+}
+```
+
 ### Documentation
 
 See https://godoc.org/github.com/deferpanic/deferclient for documentation.
