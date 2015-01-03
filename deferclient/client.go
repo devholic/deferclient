@@ -5,13 +5,24 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"runtime"
 	"strings"
 )
 
 const (
-	apiUrl = "https://api.deferpanic.com/v1/panics/create"
+	// ApiVersion is the version of this client
+	ApiVersion = "v1"
+
+	// ApiBase is the base url that client requests goto
+	ApiBase = "https://api.deferpanic.com/" + ApiVersion
+
+	// UserAgent is the User Agent that is used with this client
+	UserAgent = "deferclient " + ApiVersion
+
+	// errorsUrl is the url to post urls to
+	errorsUrl = ApiBase + "/panics/create"
 )
 
 // Your deferpanic client token
@@ -49,6 +60,7 @@ func PanicRecover(f func(w http.ResponseWriter, r *http.Request)) func(w http.Re
 	}
 }
 
+// Prep cleans up the trace before posting
 func Prep(err interface{}) {
 	errorMsg := fmt.Sprintf("%q", err)
 
@@ -92,16 +104,23 @@ func ShipTrace(exception string, errorstr string) {
 
 	dj := &DeferJSON{Msg: errorstr, BackTrace: body, GoVersion: goVersion}
 	b, err := json.Marshal(dj)
+	if err != nil {
+		log.Println(err)
+	}
 
-	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(b))
+	PostIt(b, errorsUrl)
+}
+
+func PostIt(b []byte, url string) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
 	req.Header.Set("X-deferid", Token)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", UserAgent)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	defer resp.Body.Close()
-
 }
