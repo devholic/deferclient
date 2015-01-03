@@ -17,7 +17,7 @@ Get an API KEY:
         -d "password=password"
 ```
 
-### Examples
+### HTTP Examples
 
 Here we have 4 examples:
 * log a fast request
@@ -74,6 +74,7 @@ func main() {
 
 The client works perfectly fine in non-HTTP applications:
 
+### Non-HTTP Errors/Panics
 Here we log both an error and a panic.
 
 ```
@@ -105,6 +106,43 @@ func main() {
         panicTest()
 
         time.Sleep(time.Second * 20)
+}
+```
+
+### Database Latency
+
+```
+package main
+
+import (
+        "database/sql"
+        "github.com/deferpanic/deferclient/deferstats"
+        _ "github.com/lib/pq"
+        "log"
+        "time"
+)
+
+func main() {
+        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+        _db, err := sql.Open("postgres", "dbname=dptest sslmode=disable")
+        db := deferstats.NewDB(_db)
+
+        go deferstats.CaptureStats()
+
+        var id int
+        var sleep string
+        err = db.QueryRow("select 1 as num, pg_sleep(0.25)").Scan(&id, &sleep)
+        if err != nil {
+                log.Println("oh no!")
+        }
+
+        err = db.QueryRow("select 1 as num, pg_sleep(2)").Scan(&id, &sleep)
+        if err != nil {
+                log.Println("oh no!")
+        }
+
+        time.Sleep(3 * time.Second)
 }
 ```
 
