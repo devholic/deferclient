@@ -1,10 +1,9 @@
 package deferstats
 
 import (
-	"bytes"
 	"encoding/json"
+	"github.com/deferpanic/deferclient/deferclient"
 	"log"
-	"net/http"
 	"runtime"
 	"runtime/debug"
 	"strconv"
@@ -16,8 +15,17 @@ const (
 	// statsFrequency controls how often to report into deferpanic
 	statsFrequency = 60 * time.Second
 
-	// apiUrl is the stats api endpoint
-	apiUrl = "https://api.deferpanic.com/v1/stats/create"
+	// statsUrl is the stats api endpoint
+	statsUrl = deferclient.ApiBase + "/stats/create"
+
+	// GrabGC determines if we should grab gc stats
+	GrabGC = true
+
+	// GrabMem determines if we should grab mem stats
+	GrabMem = true
+
+	// GrabGR determines if we should grab go routine stats
+	GrabGR = true
 )
 
 // Token is your deferpanic token available in settings
@@ -54,43 +62,49 @@ func CaptureStats() {
 	}
 }
 
-// ShipStats sends DeferStats to deferpanic
-func ShipStats(stats DeferStats) {
-	b, err := json.Marshal(stats)
-
-	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(b))
-	req.Header.Set("X-deferid", Token)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println(err)
-	}
-	defer resp.Body.Close()
-
-}
-
 // capture does a one time collection of DeferStats
 func capture() {
 	var mem runtime.MemStats
-	runtime.ReadMemStats(&mem)
-
 	var gc debug.GCStats
-	debug.ReadGCStats(&gc)
+
+	mems := ""
+	if GrabMem {
+		runtime.ReadMemStats(&mem)
+		mems = strconv.FormatUint(mem.Alloc, 10)
+	}
+
+	gcs := ""
+	if GrabGC {
+		debug.ReadGCStats(&gc)
+		gcs = strconv.FormatInt(gc.NumGC, 10)
+	}
+
+	grs := ""
+	if GrabGR {
+		grs = strconv.Itoa(runtime.NumGoroutine())
+	}
 
 	ds := DeferStats{
-		Mem:        strconv.FormatUint(mem.Alloc, 10),
-		GoRoutines: strconv.Itoa(runtime.NumGoroutine()),
+		Mem:        mems,
+		GoRoutines: grs,
 		HTTPs:      curlist,
 		DBs:        querylist,
-		GC:         strconv.FormatInt(gc.NumGC, 10),
+		GC:         gcs,
 	}
 
 	// empty our https/dbs
 	curlist = []DeferHTTP{}
 	querylist = []DeferDB{}
 
-	go ShipStats(ds)
+	go func() {
+		b, err := json.Marshal(ds)
+		if err != nil {
+			log.Println(err)
+		}
 
+		// hack
+		deferclient.Token = Token
+
+		deferclient.PostIt(b, statsUrl)
+	}()
 }
