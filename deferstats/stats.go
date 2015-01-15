@@ -30,6 +30,7 @@ const (
 
 // Token is your deferpanic token available in settings
 var Token string
+var Verbose bool = false
 
 // DeferHTTP holds the path uri and latency for each request
 type DeferHTTP struct {
@@ -61,6 +62,10 @@ func CaptureStats() {
 		
 		// Capture the stats every X seconds
 		go capture()
+		
+		if Verbose {
+			log.Printf("Captured at:%v\n", ts)
+		}
 	}
 }
 
