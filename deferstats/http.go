@@ -2,6 +2,7 @@ package deferstats
 
 import (
 	"github.com/deferpanic/deferclient/deferclient"
+	"log"
 	"net/http"
 	"time"
 )
@@ -45,7 +46,11 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 }
 
 func AddRequest(start_time time.Time, path string) {
-	
+
+	if Verbose {
+		log.Printf("Added manual request: %v\n", path)
+	}
+
 	// It's just an easier way to create third-party middlewares
 	appendHTTP(start_time, path)
 }
