@@ -44,7 +44,7 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 	}
 }
 
-func AddRequest(start_time int, path string) {
+func AddRequest(start_time time.Time, path string) {
 	
 	// It's just an easier way to create third-party middlewares
 	appendHTTP(start_time, path)
