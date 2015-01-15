@@ -12,8 +12,8 @@ import (
 
 // fixme
 const (
-	// statsFrequency controls how often to report into deferpanic
-	statsFrequency = 60 * time.Second
+	// statsFrequency controls how often to report into deferpanic in seconds
+	statsFrequency = 60
 
 	// statsUrl is the stats api endpoint
 	statsUrl = deferclient.ApiBase + "/stats/create"
@@ -55,10 +55,12 @@ type DeferStats struct {
 
 // CaptureStats POSTs DeferStats every
 func CaptureStats() {
-	for {
+	
+	tickerChannel := time.Tick(time.Duration(statsFrequency) * time.Second)
+	for ts := range tickerChannel {
+		
+		// Capture the stats every X seconds
 		go capture()
-		// set me to a reasonable timeout
-		time.Sleep(statsFrequency)
 	}
 }
 
