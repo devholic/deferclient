@@ -7,8 +7,8 @@ Defer Panic Client Lib.
 
 Translations:
 
-* [简体中文](translations/README_zh_cn.md)
-* [Русский](translations/README_ru_RU.md)
+* [简体中文](README_zh_cn.md)
+* [Русский](README_ru_RU.md)
 
 ### Installation
 ``go get github.com/deferpanic/deferclient``
