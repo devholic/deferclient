@@ -56,13 +56,13 @@ type DeferStats struct {
 
 // CaptureStats POSTs DeferStats every
 func CaptureStats() {
-	
+
 	tickerChannel := time.Tick(time.Duration(statsFrequency) * time.Second)
 	for ts := range tickerChannel {
-		
+
 		// Capture the stats every X seconds
 		go capture()
-		
+
 		if Verbose {
 			log.Printf("Captured at:%v\n", ts)
 		}
