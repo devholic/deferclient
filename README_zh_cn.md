@@ -1,20 +1,15 @@
-# Defer Panic client
+# Defer Panic 客户
 [![GoDoc](https://godoc.org/github.com/deferpanic/deferclient?status.svg)](https://godoc.org/github.com/deferpanic/deferclient)
 
 [![wercker status](https://app.wercker.com/status/b7a471949687969984843f7c5e5988a2/s "wercker status")](https://app.wercker.com/project/bykey/b7a471949687969984843f7c5e5988a2)
 
-Defer Panic Client Lib.
+Defer Panic 客户端库.
 
-Translations:
-
-* [简体中文](translations/README_zh_cn.md)
-* [Русский](translations/README_ru_RU.md)
-
-### Installation
+### 安装
 ``go get github.com/deferpanic/deferclient``
 
 
-Get an API KEY:
+得到一个API KEY:
 ```
  curl https://api.deferpanic.com/v1/users/create \
         -X POST \
@@ -22,13 +17,13 @@ Get an API KEY:
         -d "password=password"
 ```
 
-### HTTP Examples
+### HTTP范例
 
-Here we have 4 examples:
-* log a fast request
-* log a slow request
-* log an error
-* log a panic
+在这里，我们有4个例子：
+*日志快速要求
+*登录缓慢的请求
+*记录错误
+*登录恐慌
 
 ```go
 package main
@@ -77,10 +72,10 @@ func main() {
 }
 ```
 
-The client works perfectly fine in non-HTTP applications:
+客户端工作完全正常的非HTTP应用程序：
 
-### Non-HTTP Errors/Panics
-Here we log both an error and a panic.
+### 非HTTP错误/恐慌
+在这里，我们记录这两个错误和恐慌。
 
 ```
 package main
@@ -114,7 +109,7 @@ func main() {
 }
 ```
 
-### Database Latency
+### 数据库延迟
 
 ```
 package main
@@ -151,8 +146,10 @@ func main() {
 }
 ```
 
-### Documentation
+### 文件
+
+见https://godoc.org/github.com/deferpanic/deferclient 的文档。
 
 See https://godoc.org/github.com/deferpanic/deferclient for documentation.
 
-Defer Panic Client
+Defer Panic 客户

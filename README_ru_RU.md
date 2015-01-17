@@ -1,20 +1,15 @@
-# Defer Panic client
+# Defer Panic клиент
 [![GoDoc](https://godoc.org/github.com/deferpanic/deferclient?status.svg)](https://godoc.org/github.com/deferpanic/deferclient)
 
 [![wercker status](https://app.wercker.com/status/b7a471949687969984843f7c5e5988a2/s "wercker status")](https://app.wercker.com/project/bykey/b7a471949687969984843f7c5e5988a2)
 
-Defer Panic Client Lib.
+Defer Panic Клиент Lib.
 
-Translations:
-
-* [简体中文](translations/README_zh_cn.md)
-* [Русский](translations/README_ru_RU.md)
-
-### Installation
+### установка
 ``go get github.com/deferpanic/deferclient``
 
 
-Get an API KEY:
+Получить ключ API:
 ```
  curl https://api.deferpanic.com/v1/users/create \
         -X POST \
@@ -22,13 +17,13 @@ Get an API KEY:
         -d "password=password"
 ```
 
-### HTTP Examples
+### HTTP Примеры
 
-Here we have 4 examples:
-* log a fast request
-* log a slow request
-* log an error
-* log a panic
+Здесь мы имеем 4 примеры:
+* Вход быстрый запрос
+* Войти медленный запрос
+* Регистрирует ошибку
+* Войти панику
 
 ```go
 package main
@@ -77,10 +72,10 @@ func main() {
 }
 ```
 
-The client works perfectly fine in non-HTTP applications:
+Клиент работает прекрасно, не связанных с HTTP приложений:
 
-### Non-HTTP Errors/Panics
-Here we log both an error and a panic.
+### Номера Ошибки HTTP / Паника
+Здесь мы войти как ошибку и панику.
 
 ```
 package main
@@ -114,7 +109,7 @@ func main() {
 }
 ```
 
-### Database Latency
+### База данных Задержка
 
 ```
 package main
@@ -151,8 +146,8 @@ func main() {
 }
 ```
 
-### Documentation
+### Документация
 
-See https://godoc.org/github.com/deferpanic/deferclient for documentation.
+См https://godoc.org/github.com/deferpanic/deferclient документации.
 
-Defer Panic Client
+Defer Panic клиент
