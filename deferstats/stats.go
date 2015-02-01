@@ -34,21 +34,22 @@ var Verbose bool = false
 
 // DeferHTTP holds the path uri and latency for each request
 type DeferHTTP struct {
-	Path string `json:Uri"`
-	Time int    `json:Time"`
+	Path       string `json:"Uri"`
+	StatusCode int    `json:"StatusCode"`
+	Time       int    `json:"Time"`
 }
 
 // DeferDB holds the query and latency for each sql query whose
 // threshold was overran
 type DeferDB struct {
-	Query string `json:Query"`
-	Time  int    `json:Time"`
+	Query string `json:"Query"`
+	Time  int    `json:"Time"`
 }
 
 // DeferStats captures {mem, gc, goroutines and http calls}
 type DeferStats struct {
-	Mem        string      `json:Mem"`
-	GC         string      `json:GC"`
+	Mem        string      `json:"Mem"`
+	GC         string      `json:"GC"`
 	GoRoutines string      `json:"GoRoutines"`
 	HTTPs      []DeferHTTP `json:"HTTPs"`
 	DBs        []DeferDB   `json:"DBs"`

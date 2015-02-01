@@ -1,5 +1,4 @@
 // Package errors implements deferpanic error logging.
-// graciously stolen from dropbox
 package errors
 
 import (
@@ -8,22 +7,29 @@ import (
 	"runtime"
 )
 
+// DeferPanicError is an interface impmenting the error interface and
+// adding the backtrace
 type DeferPanicError interface {
 	Error() string
 
 	GetBackTrace() string
 }
 
+// DeferPanicBaseError contains the error msg, the backtrace, and the
+// original error value
 type DeferPanicBaseError struct {
 	Msg       string
 	BackTrace string
 	orig      error
 }
 
+// GetBackTrace is a getter for obtaining the backtrace for a deferpanic
+// error
 func (e *DeferPanicBaseError) GetBackTrace() string {
 	return e.BackTrace
 }
 
+// Backtrace grabs the backtrace
 func BackTrace() (body string) {
 
 	for skip := 1; ; skip++ {
@@ -41,6 +47,7 @@ func BackTrace() (body string) {
 	return body
 }
 
+// Wrap wraps an error and ships the backtrace to deferpanic
 func Wrap(err error, msg string) DeferPanicError {
 	stack := BackTrace()
 	deferclient.ShipTrace(stack, msg)
@@ -52,6 +59,7 @@ func Wrap(err error, msg string) DeferPanicError {
 	}
 }
 
+// new instantiates a new error and ships the backtrace to deferpanic
 func New(msg string) DeferPanicError {
 	stack := BackTrace()
 	go deferclient.ShipTrace(stack, msg)
@@ -62,6 +70,7 @@ func New(msg string) DeferPanicError {
 	}
 }
 
+// Error implments the error interface
 func (e *DeferPanicBaseError) Error() string {
 	return e.Msg
 }
