@@ -10,22 +10,69 @@ import (
 // curlist holds an array of DeferHTTPs (uri && latency)
 var curlist []DeferHTTP
 
-func appendHTTP(startTime time.Time, path string) {
+// appendHTTP adds a new http request to the list
+func appendHTTP(startTime time.Time, path string, status_code int) {
 	endTime := time.Now()
 
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
 
 	dh := DeferHTTP{
-		Path: path,
-		Time: t,
+		Path:       path,
+		Time:       t,
+		StatusCode: status_code,
 	}
 
 	curlist = append(curlist, dh)
 }
 
+// tracingResponseWriter implements a responsewriter with status
+// exportable
+type tracingResponseWriter interface {
+	http.ResponseWriter
+	Status() int
+	Size() int
+}
+
+type responseTracer struct {
+	w      http.ResponseWriter
+	status int
+	size   int
+}
+
+func (l *responseTracer) Header() http.Header {
+	return l.w.Header()
+}
+
+func (l *responseTracer) Write(b []byte) (int, error) {
+	if l.status == 0 {
+		// The status will be StatusOK if WriteHeader has not been
+		// called yet
+		l.status = http.StatusOK
+	}
+	size, err := l.w.Write(b)
+	l.size += size
+	return size, err
+}
+
+// WriteHeader sets the header
+func (l *responseTracer) WriteHeader(s int) {
+	l.w.WriteHeader(s)
+	l.status = s
+}
+
+// Status returns the HTTP status code
+func (l *responseTracer) Status() int {
+	return l.status
+}
+
+func (l *responseTracer) Size() int {
+	return l.size
+}
+
 // HTTPHandler wraps a http handler and captures the latency of each
 // request
 func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 
@@ -34,23 +81,26 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 				// hack
 				deferclient.Token = Token
 				deferclient.Prep(err)
-
-				appendHTTP(startTime, r.URL.Path)
+				appendHTTP(startTime, r.URL.Path, 500)
 			}
 		}()
 
-		f(w, r)
+		var tracer tracingResponseWriter
+		tracer = &responseTracer{w: w}
 
-		appendHTTP(startTime, r.URL.Path)
+		f(tracer, r)
+
+		appendHTTP(startTime, r.URL.Path, tracer.Status())
 	}
 }
 
-func AddRequest(start_time time.Time, path string) {
+// AddRequest allows external libraries to add a http request
+func AddRequest(start_time time.Time, path string, status_code int) {
 
 	if Verbose {
 		log.Printf("Added manual request: %v\n", path)
 	}
 
 	// It's just an easier way to create third-party middlewares
-	appendHTTP(start_time, path)
+	appendHTTP(start_time, path, status_code)
 }
