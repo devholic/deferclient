@@ -151,6 +151,26 @@ func main() {
 }
 ```
 
+### Generic K/V
+```
+package main
+
+import (
+        "github.com/deferpanic/deferclient/deferkv"
+        "time"
+)
+
+func main() {
+        deferkv.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+        deferkv.Report("some_key", 10)
+
+        deferkv.Report("some_other_key", 30)
+
+        time.Sleep(5 * time.Second)
+}
+```
+
 ### Documentation
 
 See https://godoc.org/github.com/deferpanic/deferclient for documentation.
