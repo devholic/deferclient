@@ -117,8 +117,8 @@ func main() {
 }
 ```
 
-### Errors - manually log
-If you want to manually log your errors use this method. deferlog.Wrap
+### Errors - explicitly log
+If you want to explicitly log your errors use this method. deferlog.Wrap
 will log the bactrace and the error and ship it up to deferpanic
 immediately.
 
