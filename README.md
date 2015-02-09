@@ -32,8 +32,9 @@ Translations:
 ### Installation
 ``go get github.com/deferpanic/deferclient``
 
+**api key**
 
-Get an API KEY:
+Get an API KEY via your shell or signup manually [here](https://deferpanic.com/signup):
 ```
  curl https://api.deferpanic.com/v1/users/create \
         -X POST \
