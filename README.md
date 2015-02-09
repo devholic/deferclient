@@ -79,8 +79,11 @@ func main() {
 
 The client works perfectly fine in non-HTTP applications:
 
-### Non-HTTP Errors/Panics
-Here we log both an error and a panic.
+### Non-HTTP Errors/Panics - automatic errors
+Here we log both an error and a panic. If you want us to catch your
+errors when you instantiate them use this method. We'll create a new
+deferpanic error that is returned and the error will be shipped to
+deferpanic.
 
 ```
 package main
@@ -111,6 +114,39 @@ func main() {
         panicTest()
 
         time.Sleep(time.Second * 20)
+}
+```
+
+### Errors - manually log
+If you want to manually log your errors use this method. deferlog.Wrap
+will log the bactrace and the error and ship it up to deferpanic
+immediately.
+
+```
+package main
+
+import (
+        "errors"
+        "fmt"
+        "github.com/deferpanic/deferclient/deferlog"
+        "time"
+)
+
+func errorTest() {
+        err := errors.New("danger will robinson!")
+        if err != nil {
+                deferlog.Wrap(err)
+                fmt.Println(err)
+        }
+}
+
+func main() {
+
+        deferlog.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+        errorTest()
+
+        time.Sleep(5 * time.Second)
 }
 ```
 
@@ -152,6 +188,9 @@ func main() {
 ```
 
 ### Generic K/V
+If you wish to log other k/v metrics this implements a very basic
+counter over time.
+
 ```
 package main
 
