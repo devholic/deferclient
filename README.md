@@ -5,6 +5,25 @@
 
 Defer Panic Client Lib.
 
+ *  ** Error Handling - DeferClient can auto-wrap your errors to shoot
+    up to deferpanic or you can choose to explicitly log the ones you
+    care about.
+
+ *  ** Panic Handling - Let deferclient catch and log any panic you get
+    to your own dashboard.
+
+ *  ** HTTP latency - DeferClient can log the latencies of all your hard
+    hit http requests.
+
+ *  ** Database latency - Get notified of slow database queries in your
+    go app.
+
+ *  ** Metrics - See goroutines, memory usage, gc and more automatically
+    in your own dashboard.
+
+ *  ** Custom K/V - Got something we don't support? You can log your own k/v metrics just as easily.
+
+
 Translations:
 
 * [简体中文](README_zh_cn.md)
