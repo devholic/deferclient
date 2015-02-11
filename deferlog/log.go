@@ -32,5 +32,5 @@ func BackTrace() (body string) {
 func Wrap(err error) {
 	stack := BackTrace()
 	deferclient.Token = Token
-	deferclient.ShipTrace(stack, err.Error())
+	go deferclient.ShipTrace(stack, err.Error())
 }
