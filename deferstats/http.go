@@ -20,11 +20,8 @@ func appendHTTP(startTime time.Time, path string, status_code int, span_id int64
 
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
 
-	log.Println("b")
-
 	// only log over t
 	if t > latencyThreshold {
-		log.Println("a")
 
 		dh := DeferHTTP{
 			Path:         path,
@@ -39,6 +36,13 @@ func appendHTTP(startTime time.Time, path string, status_code int, span_id int64
 	}
 }
 
+// GetSpanIdString is a conveinence method to get the string equivalent
+// of a span id
+func GetSpanIdString(r http.ResponseWriter) string {
+	return strconv.FormatInt(GetSpanId(r), 10)
+}
+
+// GetSpanId returns the span id for this http request
 func GetSpanId(r http.ResponseWriter) int64 {
 	mPtr := (r).(*responseTracer)
 	return mPtr.SpanId

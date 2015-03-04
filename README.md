@@ -244,37 +244,35 @@ User Facing Service
 package main
 
 import (
-        "fmt"
-        "github.com/deferpanic/deferclient/deferstats"
-        "io/ioutil"
-        "net/http"
-        "net/url"
-        "strconv"
+    "fmt"
+    "github.com/deferpanic/deferclient/deferstats"
+    "io/ioutil"
+    "net/http"
+    "net/url"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
 
-        // just pass your spanId w/each request
-        resp, err := http.PostForm("http://127.0.0.1:7070/internal",
-                url.Values{"defer_parent_span_id":
-{strconv.FormatInt(deferstats.GetSpanId(w), 10)}})
-        if err != nil {
-                fmt.Println(err)
-        }
+    // just pass your spanId w/each request
+    resp, err := http.PostForm("http://127.0.0.1:7070/internal",
+        url.Values{"defer_parent_span_id": {deferstats.GetSpanIdString(w)}})
+    if err != nil {
+        fmt.Println(err)
+    }
 
-        defer resp.Body.Close()
-        body, err := ioutil.ReadAll(resp.Body)
+    defer resp.Body.Close()
+    body, err := ioutil.ReadAll(resp.Body)
 
-        fmt.Fprintf(w, string(body))
+    fmt.Fprintf(w, string(body))
 }
 
 func main() {
-        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+    deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
 
-        go deferstats.CaptureStats()
+    go deferstats.CaptureStats()
 
-        http.HandleFunc("/", deferstats.HTTPHandler(handler))
-        http.ListenAndServe(":9090", nil)
+    http.HandleFunc("/", deferstats.HTTPHandler(handler))
+    http.ListenAndServe(":9090", nil)
 }
 ```
 
