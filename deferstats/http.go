@@ -20,8 +20,11 @@ func appendHTTP(startTime time.Time, path string, status_code int, span_id int64
 
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
 
+	log.Println("b")
+
 	// only log over t
 	if t > latencyThreshold {
+		log.Println("a")
 
 		dh := DeferHTTP{
 			Path:         path,

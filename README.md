@@ -15,6 +15,8 @@ Defer Panic Client Lib.
  *  **HTTP latency** - DeferClient can log the latencies of all your hard
     hit http requests.
 
+ *  **Micro Services Tracing** - DeferClient can log queries to other services so you know exactly what service is slowing down the initial request!
+
  *  **Database latency** - Get notified of slow database queries in your
     go app.
 
@@ -229,6 +231,98 @@ func main() {
         time.Sleep(5 * time.Second)
 }
 ```
+
+### Micro-Services/SOA Tracing
+
+Got a micro-services/SOA architecture? Now you can trace your queries
+throughout and tie them back to the initial query that started it all!
+
+Example
+
+User Facing Service
+```
+package main
+
+import (
+        "fmt"
+        "github.com/deferpanic/deferclient/deferstats"
+        "io/ioutil"
+        "net/http"
+        "net/url"
+        "strconv"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+
+        // just pass your spanId w/each request
+        resp, err := http.PostForm("http://127.0.0.1:7070/internal",
+                url.Values{"defer_parent_span_id":
+{strconv.FormatInt(deferstats.GetSpanId(w), 10)}})
+        if err != nil {
+                fmt.Println(err)
+        }
+
+        defer resp.Body.Close()
+        body, err := ioutil.ReadAll(resp.Body)
+
+        fmt.Fprintf(w, string(body))
+}
+
+func main() {
+        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+        go deferstats.CaptureStats()
+
+        http.HandleFunc("/", deferstats.HTTPHandler(handler))
+        http.ListenAndServe(":9090", nil)
+}
+```
+
+Slow Internal API
+```
+package main
+
+import (
+        "encoding/json"
+        "github.com/deferpanic/deferclient/deferstats"
+        "net/http"
+        "time"
+)
+
+type blah struct {
+        Stuff string
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+        time.Sleep(250 * time.Millisecond)
+
+        stuff := blah{
+                Stuff: "some reply",
+        }
+
+        js, err := json.Marshal(stuff)
+        if err != nil {
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        w.Write(js)
+}
+
+func main() {
+        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+        go deferstats.CaptureStats()
+
+        http.HandleFunc("/internal", deferstats.HTTPHandler(handler))
+        http.ListenAndServe(":7070", nil)
+}
+```
+
+Notice that when you wrap your http handlers w/the deferstats
+httphandler we instantly tie the front facing service to the slow
+internal one.
 
 ### Documentation
 
