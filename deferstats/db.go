@@ -2,11 +2,44 @@ package deferstats
 
 import (
 	"database/sql"
+	"sync"
 	"time"
 )
 
+// deferDBList is used to keep a list of DeferDB objects
+// and interact with them in a thread-safe manner
+type deferDBList struct {
+	lock sync.RWMutex
+	list []DeferDB
+}
+
+// Add adds a DeferDB object to the list
+func (d *deferDBList) Add(item DeferDB) {
+	d.lock.Lock()
+	d.list = append(d.list, item)
+	d.lock.Unlock()
+}
+
+// List returns a copy of the list
+func (d *deferDBList) List() []DeferDB {
+	list := make([]DeferDB, len(d.list))
+	d.lock.RLock()
+	for i, v := range d.list {
+		list[i] = v
+	}
+	d.lock.RUnlock()
+	return list
+}
+
+// Reset removes all entries from the list
+func (d *deferDBList) Reset() {
+	d.lock.Lock()
+	d.list = []DeferDB{}
+	d.lock.Unlock()
+}
+
 var (
-	querylist []DeferDB
+	querylist deferDBList
 
 	selectThreshold int
 )
@@ -33,7 +66,7 @@ func (db *DB) logQuery(startTime time.Time, query string) {
 	}
 
 	if t >= selectThreshold {
-		querylist = append(querylist, ddb)
+		querylist.Add(ddb)
 	}
 }
 

@@ -5,13 +5,46 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/deferpanic/deferclient/deferclient"
 )
 
+// deferHTTPList is used to keep a list of DeferHTTP objects
+// and interact with them in a thread-safe manner
+type deferHTTPList struct {
+	lock sync.RWMutex
+	list []DeferHTTP
+}
+
+// Add adds a DeferHTTP object to the list
+func (d *deferHTTPList) Add(item DeferHTTP) {
+	d.lock.Lock()
+	d.list = append(d.list, item)
+	d.lock.Unlock()
+}
+
+// List returns a copy of the list
+func (d *deferHTTPList) List() []DeferHTTP {
+	list := make([]DeferHTTP, len(d.list))
+	d.lock.RLock()
+	for i, v := range d.list {
+		list[i] = v
+	}
+	d.lock.RUnlock()
+	return list
+}
+
+// Reset removes all entries from the list
+func (d *deferHTTPList) Reset() {
+	d.lock.Lock()
+	d.list = []DeferHTTP{}
+	d.lock.Unlock()
+}
+
 // curlist holds an array of DeferHTTPs (uri && latency)
-var curlist []DeferHTTP
+var curlist = &deferHTTPList{}
 
 var latencyThreshold = 200
 
@@ -32,7 +65,7 @@ func appendHTTP(startTime time.Time, path string, status_code int, span_id int64
 			ParentSpanId: parent_span_id,
 		}
 
-		curlist = append(curlist, dh)
+		curlist.Add(dh)
 
 	}
 }
