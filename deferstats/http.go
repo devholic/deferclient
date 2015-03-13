@@ -1,12 +1,13 @@
 package deferstats
 
 import (
-	"github.com/deferpanic/deferclient/deferclient"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/deferpanic/deferclient/deferclient"
 )
 
 // curlist holds an array of DeferHTTPs (uri && latency)
@@ -124,7 +125,6 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 
 		tracer.SpanId = tracer.newId()
 
-		r.ParseForm()
 		deferParentSpanId := r.FormValue("defer_parent_span_id")
 		if deferParentSpanId != "" {
 			log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
