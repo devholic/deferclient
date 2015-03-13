@@ -2,13 +2,14 @@ package deferstats
 
 import (
 	"encoding/json"
-	"github.com/deferpanic/deferclient/deferclient"
 	"log"
 	"math/rand"
 	"runtime"
 	"runtime/debug"
 	"strconv"
 	"time"
+
+	"github.com/deferpanic/deferclient/deferclient"
 )
 
 // fixme
@@ -114,8 +115,8 @@ func capture() {
 	ds := DeferStats{
 		Mem:        mems,
 		GoRoutines: grs,
-		HTTPs:      curlist,
-		DBs:        querylist,
+		HTTPs:      curlist.List(),
+		DBs:        querylist.List(),
 		GC:         gcs,
 	}
 
@@ -123,8 +124,8 @@ func capture() {
 	ds.SetAppId()
 
 	// empty our https/dbs
-	curlist = []DeferHTTP{}
-	querylist = []DeferDB{}
+	curlist.Reset()
+	querylist.Reset()
 
 	go func() {
 		b, err := json.Marshal(ds)
