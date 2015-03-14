@@ -27,8 +27,8 @@ func (d *deferHTTPList) Add(item DeferHTTP) {
 
 // List returns a copy of the list
 func (d *deferHTTPList) List() []DeferHTTP {
-	list := make([]DeferHTTP, len(d.list))
 	d.lock.RLock()
+	list := make([]DeferHTTP, len(d.list))
 	for i, v := range d.list {
 		list[i] = v
 	}
