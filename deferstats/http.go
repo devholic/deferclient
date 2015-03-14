@@ -49,6 +49,8 @@ var curlist = &deferHTTPList{}
 
 var latencyThreshold = 200
 
+// WritePanicResponse is an overridable function that, by default, writes the contents of the panic
+// error message with a 500 Internal Server Error.
 var WritePanicResponse = func(w http.ResponseWriter, r *http.Request, errMsg string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte(errMsg))
