@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"runtime"
+	"runtime/debug"
 	"strings"
 )
 
@@ -31,6 +32,10 @@ var Token string
 // Bool that turns off tracking of errors and panics - useful for
 // dev/test environments
 var NoPost = false
+
+// PrintPanics controls whether or not the HTTPHandler function prints
+// recovered panics. It is disabled by default.
+var PrintPanics = false
 
 // struct that holds expected json body for POSTing to deferpanic API v1
 type DeferJSON struct {
@@ -65,6 +70,11 @@ func Prep(err interface{}) {
 	errorMsg := fmt.Sprintf("%q", err)
 
 	errorMsg = strings.Replace(errorMsg, "\"", "", -1)
+
+	if PrintPanics {
+		stack := string(debug.Stack())
+		fmt.Println(stack)
+	}
 
 	body := ""
 	for skip := 1; ; skip++ {
