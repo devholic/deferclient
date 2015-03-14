@@ -1,6 +1,7 @@
 package deferstats
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -47,6 +48,11 @@ func (d *deferHTTPList) Reset() {
 var curlist = &deferHTTPList{}
 
 var latencyThreshold = 200
+
+var WritePanicResponse = func(w http.ResponseWriter, r *http.Request, errMsg string) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(errMsg))
+}
 
 // appendHTTP adds a new http request to the list
 func appendHTTP(startTime time.Time, path string, status_code int, span_id int64, parent_span_id int64) {
@@ -147,6 +153,9 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 				deferclient.Prep(err)
 				// FIXME
 				appendHTTP(startTime, r.URL.Path, 500, 0, 0)
+
+				errorMsg := fmt.Sprintf("%v", err)
+				WritePanicResponse(w, r, errorMsg)
 			}
 		}()
 
