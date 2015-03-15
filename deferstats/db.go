@@ -22,8 +22,8 @@ func (d *deferDBList) Add(item DeferDB) {
 
 // List returns a copy of the list
 func (d *deferDBList) List() []DeferDB {
-	list := make([]DeferDB, len(d.list))
 	d.lock.RLock()
+	list := make([]DeferDB, len(d.list))
 	for i, v := range d.list {
 		list[i] = v
 	}

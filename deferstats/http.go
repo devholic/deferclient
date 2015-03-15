@@ -1,6 +1,7 @@
 package deferstats
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -27,8 +28,8 @@ func (d *deferHTTPList) Add(item DeferHTTP) {
 
 // List returns a copy of the list
 func (d *deferHTTPList) List() []DeferHTTP {
-	list := make([]DeferHTTP, len(d.list))
 	d.lock.RLock()
+	list := make([]DeferHTTP, len(d.list))
 	for i, v := range d.list {
 		list[i] = v
 	}
@@ -47,6 +48,13 @@ func (d *deferHTTPList) Reset() {
 var curlist = &deferHTTPList{}
 
 var latencyThreshold = 200
+
+// WritePanicResponse is an overridable function that, by default, writes the contents of the panic
+// error message with a 500 Internal Server Error.
+var WritePanicResponse = func(w http.ResponseWriter, r *http.Request, errMsg string) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(errMsg))
+}
 
 // appendHTTP adds a new http request to the list
 func appendHTTP(startTime time.Time, path string, status_code int, span_id int64, parent_span_id int64) {
@@ -147,6 +155,9 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 				deferclient.Prep(err)
 				// FIXME
 				appendHTTP(startTime, r.URL.Path, 500, 0, 0)
+
+				errorMsg := fmt.Sprintf("%v", err)
+				WritePanicResponse(w, r, errorMsg)
 			}
 		}()
 
