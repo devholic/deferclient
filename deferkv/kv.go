@@ -14,6 +14,10 @@ const (
 // Token is your deferpanic token available in settings
 var Token string
 
+// Environment sets an environment tag to differentiate between separate
+// environments - default is production.
+var Environment = "production"
+
 // DeferKV is a generic k/v struct
 type DeferKV struct {
 	Key   string `json:"Key"`
@@ -35,6 +39,7 @@ func Report(key string, value int) {
 
 		// hack
 		deferclient.Token = Token
+		deferclient.Environment = Environment
 
 		deferclient.PostIt(b, kvUrl)
 	}()

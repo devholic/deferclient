@@ -14,7 +14,7 @@ import (
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.2"
+	ApiVersion = "v1.3"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
@@ -36,6 +36,10 @@ var NoPost = false
 // PrintPanics controls whether or not the HTTPHandler function prints
 // recovered panics. It is disabled by default.
 var PrintPanics = false
+
+// Environment sets an environment tag to differentiate between separate
+// environments - default is production.
+var Environment = "production"
 
 // struct that holds expected json body for POSTing to deferpanic API v1
 type DeferJSON struct {
@@ -126,6 +130,7 @@ func PostIt(b []byte, url string) {
 	req.Header.Set("X-deferid", Token)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("X-dpenv", Environment)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

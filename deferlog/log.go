@@ -10,6 +10,10 @@ import (
 // Token is your deferpanic token available in settings
 var Token string
 
+// Environment sets an environment tag to differentiate between separate
+// environments - default is production.
+var Environment = "production"
+
 // Backtrace grabs the backtrace
 func BackTrace() (body string) {
 
@@ -32,5 +36,7 @@ func BackTrace() (body string) {
 func Wrap(err error) {
 	stack := BackTrace()
 	deferclient.Token = Token
+	deferclient.Environment = Environment
+
 	go deferclient.ShipTrace(stack, err.Error())
 }
