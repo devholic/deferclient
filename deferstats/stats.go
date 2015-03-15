@@ -32,7 +32,12 @@ const (
 
 // Token is your deferpanic token available in settings
 var Token string
+
 var Verbose bool = false
+
+// Environment sets an environment tag to differentiate between separate
+// environments - default is production.
+var Environment = "production"
 
 // DeferHTTP holds the path uri and latency for each request
 type DeferHTTP struct {
@@ -135,6 +140,7 @@ func capture() {
 
 		// hack
 		deferclient.Token = Token
+		deferclient.Environment = Environment
 
 		deferclient.PostIt(b, statsUrl)
 	}()
