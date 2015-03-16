@@ -322,6 +322,25 @@ Notice that when you wrap your http handlers w/the deferstats
 httphandler we instantly tie the front facing service to the slow
 internal one.
 
+### Set Environment
+Want to monitor both staging and production? Got two or three completely
+different apps? By default the environment is set to 'production' but
+you can send us a different environment just by setting the environment
+variable to whatever you wish and all data will be tagged this way. Then
+you can change it from your settings in the dashboard.
+
+```
+func main() {
+        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+        deferstats.Environment = "some-other-environment"
+
+        go deferstats.CaptureStats()
+
+        http.HandleFunc("/internal", deferstats.HTTPHandler(handler))
+        http.ListenAndServe(":7070", nil)
+}
+```
+
 ### Documentation
 
 See https://godoc.org/github.com/deferpanic/deferclient for documentation.
