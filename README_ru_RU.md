@@ -3,13 +3,13 @@
 
 [![wercker status](https://app.wercker.com/status/b7a471949687969984843f7c5e5988a2/s "wercker status")](https://app.wercker.com/project/bykey/b7a471949687969984843f7c5e5988a2)
 
-Defer Panic Клиент Lib.
+Клиент Defer Panic.
 
 ### установка
 ``go get github.com/deferpanic/deferclient``
 
 
-Получить ключ API:
+Получение ключа API:
 ```
  curl https://api.deferpanic.com/v1/users/create \
         -X POST \
@@ -17,13 +17,13 @@ Defer Panic Клиент Lib.
         -d "password=password"
 ```
 
-### HTTP Примеры
+### Примеры с net/http
 
-Здесь мы имеем 4 примеры:
-* Вход быстрый запрос
-* Войти медленный запрос
-* Регистрирует ошибку
-* Войти панику
+Примеры работы с Defer Panic:
+* Лог быстрых запросов
+* Лог медленных запросов
+* Журналирование ошибки
+* Журналирование паники
 
 ```go
 package main
@@ -72,10 +72,10 @@ func main() {
 }
 ```
 
-Клиент работает прекрасно, не связанных с HTTP приложений:
+Также клиент может использоваться и в других приложениях:
 
-### Номера Ошибки HTTP / Паника
-Здесь мы войти как ошибку и панику.
+### Автоматическое логирование паник/ошибок
+В данном примере мы отправляем в лог и ошибку и панику. 
 
 ```
 package main
@@ -109,7 +109,7 @@ func main() {
 }
 ```
 
-### База данных Задержка
+### Медленные запросы к БД
 
 ```
 package main
@@ -146,8 +146,97 @@ func main() {
 }
 ```
 
+### Микросервисы/SOA
+
+Используете микросервисы? Теперь вы можете отследить ваши субзапросы 
+через всё приложение до корневого запроса!
+
+Пример
+
+Публичный сервис
+```
+package main
+
+import (
+    "fmt"
+    "github.com/deferpanic/deferclient/deferstats"
+    "io/ioutil"
+    "net/http"
+    "net/url"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+
+    // just pass your spanId w/each request
+    resp, err := http.PostForm("http://127.0.0.1:7070/internal",
+        url.Values{"defer_parent_span_id": {deferstats.GetSpanIdString(w)}})
+    if err != nil {
+        fmt.Println(err)
+    }
+
+    defer resp.Body.Close()
+    body, err := ioutil.ReadAll(resp.Body)
+
+    fmt.Fprintf(w, string(body))
+}
+
+func main() {
+    deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+    go deferstats.CaptureStats()
+
+    http.HandleFunc("/", deferstats.HTTPHandler(handler))
+    http.ListenAndServe(":9090", nil)
+}
+```
+
+Внутренний API
+```
+package main
+
+import (
+        "encoding/json"
+        "github.com/deferpanic/deferclient/deferstats"
+        "net/http"
+        "time"
+)
+
+type blah struct {
+        Stuff string
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+        time.Sleep(250 * time.Millisecond)
+
+        stuff := blah{
+                Stuff: "some reply",
+        }
+
+        js, err := json.Marshal(stuff)
+        if err != nil {
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        w.Write(js)
+}
+
+func main() {
+        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+
+        go deferstats.CaptureStats()
+
+        http.HandleFunc("/internal", deferstats.HTTPHandler(handler))
+        http.ListenAndServe(":7070", nil)
+}
+```
+
+При обёртке стандартного net/http handler'а в deferstats.HTTPHandler
+публичный сервис автоматически привязывается к внутреннему.
+
 ### Документация
 
-См https://godoc.org/github.com/deferpanic/deferclient документации.
+См. [документацию на GoDoc](https://godoc.org/github.com/deferpanic/deferclient).
 
-Defer Panic клиент
+Клиент Defer Panic
