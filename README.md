@@ -323,16 +323,35 @@ httphandler we instantly tie the front facing service to the slow
 internal one.
 
 ### Set Environment
-Want to monitor both staging and production? Got two or three completely
-different apps? By default the environment is set to 'production' but
-you can send us a different environment just by setting the environment
-variable to whatever you wish and all data will be tagged this way. Then
-you can change it from your settings in the dashboard.
+Want to monitor both staging and production? By default the environment
+is set to 'production' but you cand us a different environment just by
+setting the environment variable to wahtever you wish and all data will
+be tagged this way. Then you can change it from your settings in your
+dashboard.
 
 ```
 func main() {
         deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
         deferstats.Environment = "some-other-environment"
+
+        go deferstats.CaptureStats()
+
+        http.HandleFunc("/internal", deferstats.HTTPHandler(handler))
+        http.ListenAndServe(":7070", nil)
+}
+```
+
+### Set AppGroup
+Many deferPanic users are using micro-servіces/SOA and sometimes you
+want to see activity from one application versus all of them.
+
+You can set this via the AppGroup variable and then toggle it from your
+settings in your dashboard.
+
+```
+func main() {
+        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+        deferstats.AppGroup = "queueMaster3000"
 
         go deferstats.CaptureStats()
 

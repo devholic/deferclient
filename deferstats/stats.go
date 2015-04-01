@@ -3,7 +3,6 @@ package deferstats
 import (
 	"encoding/json"
 	"log"
-	"math/rand"
 	"runtime"
 	"runtime/debug"
 	"strconv"
@@ -39,6 +38,10 @@ var Verbose bool = false
 // environments - default is production.
 var Environment = "production"
 
+// AppGroup sets an optional tag to differentiate between your various
+// services - default is default
+var AppGroup = "default"
+
 // DeferHTTP holds the path uri and latency for each request
 type DeferHTTP struct {
 	Path         string `json:"Uri"`
@@ -57,27 +60,11 @@ type DeferDB struct {
 
 // DeferStats captures {mem, gc, goroutines and http calls}
 type DeferStats struct {
-	AppId      string      `json:AppId"`
-	HostId     string      `json:HostId"`
 	Mem        string      `json:"Mem"`
 	GC         string      `json:"GC"`
 	GoRoutines string      `json:"GoRoutines"`
 	HTTPs      []DeferHTTP `json:"HTTPs"`
 	DBs        []DeferDB   `json:"DBs"`
-}
-
-// HostId uniquely identifies the host
-// FIXME
-func (d DeferStats) SetHostId() {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	d.HostId = strconv.FormatInt(r.Int63(), 10)
-}
-
-// AppId uniquely identifies the app
-// FIXME
-func (d DeferStats) SetAppId() {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	d.AppId = strconv.FormatInt(r.Int63(), 10)
 }
 
 // CaptureStats POSTs DeferStats every
@@ -125,9 +112,6 @@ func capture() {
 		GC:         gcs,
 	}
 
-	ds.SetHostId()
-	ds.SetAppId()
-
 	// empty our https/dbs
 	curlist.Reset()
 	querylist.Reset()
@@ -141,6 +125,7 @@ func capture() {
 		// hack
 		deferclient.Token = Token
 		deferclient.Environment = Environment
+		deferclient.AppGroup = AppGroup
 
 		deferclient.PostIt(b, statsUrl)
 	}()

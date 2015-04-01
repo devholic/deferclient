@@ -14,6 +14,10 @@ var Token string
 // environments - default is production.
 var Environment = "production"
 
+// AppGroup sets an optional tag to differentiate between your various
+// services - default is default
+var AppGroup = "default"
+
 // Backtrace grabs the backtrace
 func BackTrace() (body string) {
 
@@ -37,6 +41,7 @@ func Wrap(err error) {
 	stack := BackTrace()
 	deferclient.Token = Token
 	deferclient.Environment = Environment
+	deferclient.AppGroup = AppGroup
 
 	go deferclient.ShipTrace(stack, err.Error())
 }
