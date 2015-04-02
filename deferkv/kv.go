@@ -18,6 +18,10 @@ var Token string
 // environments - default is production.
 var Environment = "production"
 
+// AppGroup sets an optional tag to differentiate between your various
+// services - default is default
+var AppGroup = "default"
+
 // DeferKV is a generic k/v struct
 type DeferKV struct {
 	Key   string `json:"Key"`
@@ -40,6 +44,7 @@ func Report(key string, value int) {
 		// hack
 		deferclient.Token = Token
 		deferclient.Environment = Environment
+		deferclient.AppGroup = AppGroup
 
 		deferclient.PostIt(b, kvUrl)
 	}()
