@@ -109,13 +109,13 @@ func capture() {
 		Mem:        mems,
 		GoRoutines: grs,
 		HTTPs:      curlist.List(),
-		DBs:        querylist.List(),
+		DBs:        Querylist.List(),
 		GC:         gcs,
 	}
 
 	// empty our https/dbs
 	curlist.Reset()
-	querylist.Reset()
+	Querylist.Reset()
 
 	go func() {
 		b, err := json.Marshal(ds)
