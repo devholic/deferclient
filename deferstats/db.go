@@ -39,7 +39,7 @@ func (d *deferDBList) Reset() {
 }
 
 var (
-	querylist deferDBList
+	Querylist deferDBList
 
 	selectThreshold int
 )
@@ -66,7 +66,7 @@ func (db *DB) logQuery(startTime time.Time, query string) {
 	}
 
 	if t >= selectThreshold {
-		querylist.Add(ddb)
+		Querylist.Add(ddb)
 	}
 }
 
