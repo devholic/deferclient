@@ -1,3 +1,4 @@
+// Package deferstats implements deferpanic stats
 package deferstats
 
 import (

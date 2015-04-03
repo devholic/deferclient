@@ -140,7 +140,7 @@ func main() {
 ```
 
 ### Errors - explicitly log
-If you want to explicitly log your errors use this method. deferlog.Wrap
+If you want to explicitly log your errors use this method. deferstats.Wrap
 will log the bactrace and the error and ship it up to deferpanic
 immediately.
 
@@ -150,21 +150,21 @@ package main
 import (
         "errors"
         "fmt"
-        "github.com/deferpanic/deferclient/deferlog"
+        "github.com/deferpanic/deferclient/deferstats"
         "time"
 )
 
 func errorTest() {
         err := errors.New("danger will robinson!")
         if err != nil {
-                deferlog.Wrap(err)
+                deferstats.Wrap(err)
                 fmt.Println(err)
         }
 }
 
 func main() {
 
-        deferlog.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
 
         errorTest()
 
