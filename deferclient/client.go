@@ -187,6 +187,10 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 401 {
+		log.Println("wrong or invalid API token")
+	}
+
 }
 
 // PostIt Posts an API request w/b body to url and sets appropriate
