@@ -28,6 +28,9 @@ const (
 
 	// GrabGR determines if we should grab go routine stats
 	GrabGR = true
+
+	// GrabCgo determines if we should grab cgo count
+	GrabCgo = true
 )
 
 // Token is your deferpanic token available in settings
@@ -64,6 +67,7 @@ type DeferStats struct {
 	Mem        string      `json:"Mem"`
 	GC         string      `json:"GC"`
 	GoRoutines string      `json:"GoRoutines"`
+	Cgos       string      `json:"Cgos"`
 	HTTPs      []DeferHTTP `json:"HTTPs"`
 	DBs        []DeferDB   `json:"DBs"`
 }
@@ -105,9 +109,15 @@ func capture() {
 		grs = strconv.Itoa(runtime.NumGoroutine())
 	}
 
+	cgos := ""
+	if GrabCgo {
+		cgos = strconv.FormatInt(runtime.NumCgoCall(), 10)
+	}
+
 	ds := DeferStats{
 		Mem:        mems,
 		GoRoutines: grs,
+		Cgos:       cgos,
 		HTTPs:      curlist.List(),
 		DBs:        Querylist.List(),
 		GC:         gcs,
