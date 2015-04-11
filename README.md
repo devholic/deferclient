@@ -32,7 +32,7 @@ Translations:
 * [Русский](README_ru_RU.md)
 
 ### Installation
-``go get github.com/deferpanic/deferclient``
+``go get github.com/deferpanic/deferclient/deferclient``
 
 **api key**
 
