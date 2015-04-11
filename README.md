@@ -324,7 +324,7 @@ internal one.
 
 ### Set Environment
 Want to monitor both staging and production? By default the environment
-is set to 'production' but you cand us a different environment just by
+is set to 'production' but you can us a different environment just by
 setting the environment variable to wahtever you wish and all data will
 be tagged this way. Then you can change it from your settings in your
 dashboard.
