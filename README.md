@@ -107,7 +107,7 @@ errors when you instantiate them use this method. We'll create a new
 deferpanic error that is returned and the error will be shipped to
 deferpanic.
 
-```
+```go
 package main
 
 import (
@@ -144,7 +144,7 @@ If you want to explicitly log your errors use this method. deferstats.Wrap
 will log the bactrace and the error and ship it up to deferpanic
 immediately.
 
-```
+```go
 package main
 
 import (
@@ -213,7 +213,7 @@ func main() {
 If you wish to log other k/v metrics this implements a very basic
 counter over time.
 
-```
+```go
 package main
 
 import (
@@ -240,7 +240,7 @@ throughout and tie them back to the initial query that started it all!
 Example
 
 User Facing Service
-```
+```go
 package main
 
 import (
@@ -277,7 +277,7 @@ func main() {
 ```
 
 Slow Internal API
-```
+```go
 package main
 
 import (
@@ -329,7 +329,7 @@ setting the environment variable to wahtever you wish and all data will
 be tagged this way. Then you can change it from your settings in your
 dashboard.
 
-```
+```go
 func main() {
         deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
         deferstats.Environment = "some-other-environment"
@@ -348,7 +348,7 @@ want to see activity from one application versus all of them.
 You can set this via the AppGroup variable and then toggle it from your
 settings in your dashboard.
 
-```
+```go
 func main() {
         deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
         deferstats.AppGroup = "queueMaster3000"
