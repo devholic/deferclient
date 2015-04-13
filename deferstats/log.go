@@ -32,5 +32,10 @@ func Wrap(err error) {
 	deferclient.Environment = Environment
 	deferclient.AppGroup = AppGroup
 
-	go deferclient.ShipTrace(stack, err.Error())
+	go deferclient.ShipTrace(stack, err.Error(), 0)
+}
+
+// WrapHTTPError wraps an error that occurs w/in a http request and
+// sends the error to deferpanic w/the spanId
+func WrapHTTPError(spanId int64, err error) {
 }

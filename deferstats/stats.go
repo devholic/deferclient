@@ -36,6 +36,7 @@ const (
 // Token is your deferpanic token available in settings
 var Token string
 
+// Verbose logs any stats output - for testing/dev
 var Verbose bool = false
 
 // Environment sets an environment tag to differentiate between separate
@@ -45,22 +46,6 @@ var Environment = "production"
 // AppGroup sets an optional tag to differentiate between your various
 // services - default is default
 var AppGroup = "default"
-
-// DeferHTTP holds the path uri and latency for each request
-type DeferHTTP struct {
-	Path         string `json:"Uri"`
-	StatusCode   int    `json:"StatusCode"`
-	Time         int    `json:"Time"`
-	SpanId       int64  `json:"SpanId"`
-	ParentSpanId int64  `json:"ParentSpanId"`
-}
-
-// DeferDB holds the query and latency for each sql query whose
-// threshold was overran
-type DeferDB struct {
-	Query string `json:"Query"`
-	Time  int    `json:"Time"`
-}
 
 // DeferStats captures {mem, gc, goroutines and http calls}
 type DeferStats struct {

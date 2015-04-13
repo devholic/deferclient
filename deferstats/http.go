@@ -12,6 +12,25 @@ import (
 	"github.com/deferpanic/deferclient/deferclient"
 )
 
+var (
+	// curlist holds an array of DeferHTTPs (uri && latency)
+	curlist = &deferHTTPList{}
+
+	// latencyThreshold is the threshold in milliseconds that if
+	// exceeded a request will be added to the curlist
+	latencyThreshold = 200
+)
+
+// DeferHTTP holds the path uri and latency for each request
+type DeferHTTP struct {
+	Path         string `json:"Uri"`
+	StatusCode   int    `json:"StatusCode"`
+	Time         int    `json:"Time"`
+	SpanId       int64  `json:"SpanId"`
+	ParentSpanId int64  `json:"ParentSpanId"`
+	IsProblem    bool   `json:"IsProblem"`
+}
+
 // deferHTTPList is used to keep a list of DeferHTTP objects
 // and interact with them in a thread-safe manner
 type deferHTTPList struct {
@@ -44,11 +63,6 @@ func (d *deferHTTPList) Reset() {
 	d.lock.Unlock()
 }
 
-// curlist holds an array of DeferHTTPs (uri && latency)
-var curlist = &deferHTTPList{}
-
-var latencyThreshold = 200
-
 // WritePanicResponse is an overridable function that, by default, writes the contents of the panic
 // error message with a 500 Internal Server Error.
 var WritePanicResponse = func(w http.ResponseWriter, r *http.Request, errMsg string) {
@@ -57,13 +71,14 @@ var WritePanicResponse = func(w http.ResponseWriter, r *http.Request, errMsg str
 }
 
 // appendHTTP adds a new http request to the list
-func appendHTTP(startTime time.Time, path string, status_code int, span_id int64, parent_span_id int64) {
+func appendHTTP(startTime time.Time, path string, status_code int, span_id int64,
+	parent_span_id int64, isProblem bool) {
 	endTime := time.Now()
 
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
 
-	// only log over t
-	if t > latencyThreshold {
+	// only log if t over latencyThreshold or if a panic/error occurred
+	if (t > latencyThreshold) || isProblem {
 
 		dh := DeferHTTP{
 			Path:         path,
@@ -71,6 +86,7 @@ func appendHTTP(startTime time.Time, path string, status_code int, span_id int64
 			StatusCode:   status_code,
 			SpanId:       span_id,
 			ParentSpanId: parent_span_id,
+			IsProblem:    isProblem,
 		}
 
 		curlist.Add(dh)
@@ -148,19 +164,6 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 	return func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 
-		defer func() {
-			if err := recover(); err != nil {
-				// hack
-				deferclient.Token = Token
-				deferclient.Prep(err)
-				// FIXME
-				appendHTTP(startTime, r.URL.Path, 500, 0, 0)
-
-				errorMsg := fmt.Sprintf("%v", err)
-				WritePanicResponse(w, r, errorMsg)
-			}
-		}()
-
 		var tracer *responseTracer
 
 		tracer = &responseTracer{
@@ -171,23 +174,42 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 
 		deferParentSpanId := r.FormValue("defer_parent_span_id")
 		if deferParentSpanId != "" {
-			log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
+			if Verbose {
+				log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
+			}
 			tracer.ParentSpanId, _ = strconv.ParseInt(deferParentSpanId, 10, 64)
 		}
 
+		defer func() {
+			if err := recover(); err != nil {
+				// hack - FIXME
+				deferclient.Token = Token
+				deferclient.Environment = Environment
+				deferclient.AppGroup = AppGroup
+
+				deferclient.Prep(err, tracer.SpanId)
+
+				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId, true)
+
+				errorMsg := fmt.Sprintf("%v", err)
+				WritePanicResponse(w, r, errorMsg)
+			}
+		}()
+
 		f(tracer, r)
 
-		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId)
+		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId, false)
 	}
 }
 
 // AddRequest allows external libraries to add a http request
-func AddRequest(start_time time.Time, path string, status_code int, span_id int64, parent_span_id int64) {
+func AddRequest(start_time time.Time, path string, status_code int, span_id int64,
+	parent_span_id int64, isProblem bool) {
 
 	if Verbose {
 		log.Printf("Added manual request: %v\n", path)
 	}
 
 	// It's just an easier way to create third-party middlewares
-	appendHTTP(start_time, path, status_code, span_id, parent_span_id)
+	appendHTTP(start_time, path, status_code, span_id, parent_span_id, isProblem)
 }
