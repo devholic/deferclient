@@ -17,7 +17,7 @@ import (
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.5"
+	ApiVersion = "v1.6"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
@@ -25,8 +25,34 @@ const (
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion
 
-	// errorsUrl is the url to post urls to
+	// errorsUrl is the url to post panics && errors to
 	errorsUrl = ApiBase + "/panics/create"
+)
+
+var (
+	// Your deferpanic client token
+	// this is being DEPRECATED
+	Token string
+
+	// Bool that turns off tracking of errors and panics - useful for
+	// dev/test environments
+	// this is being DEPRECATED
+	NoPost = false
+
+	// PrintPanics controls whether or not the HTTPHandler function prints
+	// recovered panics. It is disabled by default.
+	// this is being DEPRECATED
+	PrintPanics = false
+
+	// Environment sets an environment tag to differentiate between separate
+	// environments - default is production.
+	// this is being DEPRECATED
+	Environment = "production"
+
+	// AppGroup sets an optional tag to differentiate between your various
+	// services - default is default
+	// this is being DEPRECATED
+	AppGroup = "default"
 )
 
 // DeferPanicClient is the base struct for making requests to the defer
@@ -41,35 +67,12 @@ type DeferPanicClient struct {
 	AgentId     string
 }
 
-// Your deferpanic client token
-// this is being DEPRECATED
-var Token string
-
-// Bool that turns off tracking of errors and panics - useful for
-// dev/test environments
-// this is being DEPRECATED
-var NoPost = false
-
-// PrintPanics controls whether or not the HTTPHandler function prints
-// recovered panics. It is disabled by default.
-// this is being DEPRECATED
-var PrintPanics = false
-
-// Environment sets an environment tag to differentiate between separate
-// environments - default is production.
-// this is being DEPRECATED
-var Environment = "production"
-
-// AppGroup sets an optional tag to differentiate between your various
-// services - default is default
-// this is being DEPRECATED
-var AppGroup = "default"
-
-// struct that holds expected json body for POSTing to deferpanic API v1
+// struct that holds expected json body for POSTing to deferpanic API
 type DeferJSON struct {
 	Msg       string `json:"ErrorName"`
 	BackTrace string `json:"Body"`
 	GoVersion string `json:"Version"`
+	SpanId    int64  `json:"SpanId,omitempty"`
 }
 
 // agentID sets a 'unique' ID for this agent
@@ -92,27 +95,17 @@ func agentID() string {
 
 // Persists ensures any panics will post to deferpanic website for
 // tracking
+// typically used in non http go-routines
 func Persist() {
 	if err := recover(); err != nil {
-		Prep(err)
+		Prep(err, 0)
 	}
 }
 
-// recovers from http handler panics and posts to deferpanic website for
-// tracking
-func PanicRecover(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				Prep(err)
-			}
-		}()
-		f(w, r)
-	}
-}
-
-// Prep cleans up the trace before posting
-func Prep(err interface{}) {
+// Prep takes an error && a spanId
+// it cleans up the error/trace before calling ShipTrace
+// if spanId is zero it is ommited
+func Prep(err interface{}, spanId int64) {
 	errorMsg := fmt.Sprintf("%q", err)
 
 	errorMsg = strings.Replace(errorMsg, "\"", "", -1)
@@ -122,7 +115,14 @@ func Prep(err interface{}) {
 		fmt.Println(stack)
 	}
 
-	body := ""
+	body := backTrace()
+
+	go ShipTrace(body, errorMsg, spanId)
+}
+
+// backtrace grabs the backtrace
+func backTrace() (body string) {
+
 	for skip := 1; ; skip++ {
 		pc, file, line, ok := runtime.Caller(skip)
 		if !ok {
@@ -135,9 +135,10 @@ func Prep(err interface{}) {
 		body += fmt.Sprintf("%s:%d %s()\n", file, line, f.Name())
 	}
 
-	go ShipTrace(body, errorMsg)
+	return body
 }
 
+// cleanTrace should be fixed
 // encoding
 func cleanTrace(body string) string {
 	body = strings.Replace(body, "\n", "\\n", -1)
@@ -149,7 +150,9 @@ func cleanTrace(body string) string {
 }
 
 // ShipTrace POSTs a DeferJSON json body to the deferpanic website
-func ShipTrace(exception string, errorstr string) {
+// soon to be deprecated
+// if spanId is zero it is ignored
+func ShipTrace(exception string, errorstr string, spanId int64) {
 	if NoPost {
 		return
 	}
@@ -158,13 +161,30 @@ func ShipTrace(exception string, errorstr string) {
 
 	body := cleanTrace(exception)
 
-	dj := &DeferJSON{Msg: errorstr, BackTrace: body, GoVersion: goVersion}
+	dj := &DeferJSON{
+		Msg:       errorstr,
+		BackTrace: body,
+		GoVersion: goVersion,
+	}
+
+	if spanId > 0 {
+		dj.SpanId = spanId
+	}
+
 	b, err := json.Marshal(dj)
 	if err != nil {
 		log.Println(err)
 	}
 
-	PostIt(b, errorsUrl)
+	dpc := DeferPanicClient{
+		Token:       Token,
+		UserAgent:   UserAgent,
+		Environment: Environment,
+		AppGroup:    AppGroup,
+		AgentId:     agentID(),
+	}
+
+	dpc.Postit(b, errorsUrl)
 }
 
 // postIt Posts an API request w/b body to url and sets appropriate

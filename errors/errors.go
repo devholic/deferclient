@@ -50,7 +50,7 @@ func BackTrace() (body string) {
 // Wrap wraps an error and ships the backtrace to deferpanic
 func Wrap(err error, msg string) DeferPanicError {
 	stack := BackTrace()
-	go deferclient.ShipTrace(stack, msg)
+	go deferclient.ShipTrace(stack, msg, 0)
 
 	return &DeferPanicBaseError{
 		Msg:       msg,
@@ -62,7 +62,7 @@ func Wrap(err error, msg string) DeferPanicError {
 // new instantiates a new error and ships the backtrace to deferpanic
 func New(msg string) DeferPanicError {
 	stack := BackTrace()
-	go deferclient.ShipTrace(stack, msg)
+	go deferclient.ShipTrace(stack, msg, 0)
 
 	return &DeferPanicBaseError{
 		Msg:       msg,

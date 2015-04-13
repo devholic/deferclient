@@ -6,6 +6,27 @@ import (
 	"time"
 )
 
+var (
+	// Querylist is the list of db_queries that will be sent to
+	// deferpanic
+	Querylist deferDBList
+
+	// selectThreshold is the size in milliseconds that if a query goes
+	// over it will be added to the Querylist
+	selectThreshold int
+)
+
+type DB struct {
+	Other *sql.DB
+}
+
+// DeferDB holds the query and latency for each sql query whose
+// threshold was overran
+type DeferDB struct {
+	Query string `json:"Query"`
+	Time  int    `json:"Time"`
+}
+
 // deferDBList is used to keep a list of DeferDB objects
 // and interact with them in a thread-safe manner
 type deferDBList struct {
@@ -36,16 +57,6 @@ func (d *deferDBList) Reset() {
 	d.lock.Lock()
 	d.list = []DeferDB{}
 	d.lock.Unlock()
-}
-
-var (
-	Querylist deferDBList
-
-	selectThreshold int
-)
-
-type DB struct {
-	Other *sql.DB
 }
 
 func NewDB(db *sql.DB) *DB {

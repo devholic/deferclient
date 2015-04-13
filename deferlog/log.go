@@ -43,5 +43,5 @@ func Wrap(err error) {
 	deferclient.Environment = Environment
 	deferclient.AppGroup = AppGroup
 
-	go deferclient.ShipTrace(stack, err.Error())
+	go deferclient.ShipTrace(stack, err.Error(), 0)
 }
