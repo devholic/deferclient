@@ -20,8 +20,14 @@ Defer Panic Client Lib.
  *  **Database latency** - Get notified of slow database queries in your
     go app.
 
- *  **Metrics** - See goroutines, memory usage, gc and more automatically
-    in your own dashboard.
+ *  **Metrics** - See:
+    - go routines
+    - memory
+    - usage
+    - gc
+    - cgo
+
+    and more automatically in your own dashboard.
 
  *  **Custom K/V** - Got something we don't support? You can log your own k/v metrics just as easily.
 
@@ -38,7 +44,7 @@ Translations:
 
 Get an API KEY via your shell or signup manually [here](https://deferpanic.com/signup):
 ```
- curl https://api.deferpanic.com/v1/users/create \
+ curl https://api.deferpanic.com/v1.6/users/create \
         -X POST \
         -d "email=test@test.com" \
         -d "password=password"
@@ -49,7 +55,6 @@ Get an API KEY via your shell or signup manually [here](https://deferpanic.com/s
 Here we have 4 examples:
 * log a fast request
 * log a slow request
-* log an error
 * log a panic
 
 ```go
@@ -58,19 +63,9 @@ package main
 import (
         "fmt"
         "github.com/deferpanic/deferclient/deferstats"
-        "github.com/deferpanic/deferclient/errors"
         "net/http"
         "time"
 )
-
-func errorHandler(w http.ResponseWriter, r *http.Request) {
-        err := errors.New("throwing that error")
-        if err != nil {
-                fmt.Println(err)
-        }
-
-        fmt.Fprintf(w, "Hi")
-}
 
 func panicHandler(w http.ResponseWriter, r *http.Request) {
         panic("there is no need to panic")
@@ -93,7 +88,6 @@ func main() {
         http.HandleFunc("/fast", deferstats.HTTPHandler(fastHandler))
         http.HandleFunc("/slow", deferstats.HTTPHandler(slowHandler))
         http.HandleFunc("/panic", deferstats.HTTPHandler(panicHandler))
-        http.HandleFunc("/error", deferstats.HTTPHandler(errorHandler))
 
         http.ListenAndServe(":3000", nil)
 }
@@ -106,6 +100,9 @@ Here we log both an error and a panic. If you want us to catch your
 errors when you instantiate them use this method. We'll create a new
 deferpanic error that is returned and the error will be shipped to
 deferpanic.
+
+Note: This can produce a tremendous amount of error activity so you
+might only want to use it when necessary.
 
 ```go
 package main
@@ -208,6 +205,11 @@ func main() {
         time.Sleep(3 * time.Second)
 }
 ```
+
+We have additional database ORM wrappers:
+
+[gorp](https://github.com/deferpanic/dpgorp)
+[sqlx](https://github.com/deferpanic/dpsqlx)
 
 ### Generic K/V
 If you wish to log other k/v metrics this implements a very basic
