@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,12 +24,13 @@ var (
 
 // DeferHTTP holds the path uri and latency for each request
 type DeferHTTP struct {
-	Path         string `json:"Uri"`
-	StatusCode   int    `json:"StatusCode"`
-	Time         int    `json:"Time"`
-	SpanId       int64  `json:"SpanId"`
-	ParentSpanId int64  `json:"ParentSpanId"`
-	IsProblem    bool   `json:"IsProblem"`
+	Path         string            `json:"Path"`
+	StatusCode   int               `json:"StatusCode"`
+	Time         int               `json:"Time"`
+	SpanId       int64             `json:"SpanId"`
+	ParentSpanId int64             `json:"ParentSpanId"`
+	IsProblem    bool              `json:"IsProblem"`
+	Headers      map[string]string `json:"Headers"`
 }
 
 // deferHTTPList is used to keep a list of DeferHTTP objects
@@ -72,7 +74,7 @@ var WritePanicResponse = func(w http.ResponseWriter, r *http.Request, errMsg str
 
 // appendHTTP adds a new http request to the list
 func appendHTTP(startTime time.Time, path string, status_code int, span_id int64,
-	parent_span_id int64, isProblem bool) {
+	parent_span_id int64, isProblem bool, headers map[string]string) {
 	endTime := time.Now()
 
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
@@ -87,6 +89,7 @@ func appendHTTP(startTime time.Time, path string, status_code int, span_id int64
 			SpanId:       span_id,
 			ParentSpanId: parent_span_id,
 			IsProblem:    isProblem,
+			Headers:      headers,
 		}
 
 		curlist.Add(dh)
@@ -180,6 +183,13 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 			tracer.ParentSpanId, _ = strconv.ParseInt(deferParentSpanId, 10, 64)
 		}
 
+		// add headers
+		headers := make(map[string]string, len(r.Header))
+
+		for k, v := range r.Header {
+			headers[k] = strings.Join(v, ",")
+		}
+
 		defer func() {
 			if err := recover(); err != nil {
 				// hack - FIXME
@@ -189,7 +199,7 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 
 				deferclient.Prep(err, tracer.SpanId)
 
-				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId, true)
+				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId, true, headers)
 
 				errorMsg := fmt.Sprintf("%v", err)
 				WritePanicResponse(w, r, errorMsg)
@@ -198,18 +208,20 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 
 		f(tracer, r)
 
-		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId, false)
+		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId, false, headers)
 	}
 }
 
 // AddRequest allows external libraries to add a http request
+//
+// TODO: Refactor my usage
 func AddRequest(start_time time.Time, path string, status_code int, span_id int64,
-	parent_span_id int64, isProblem bool) {
+	parent_span_id int64, isProblem bool, headers map[string]string) {
 
 	if Verbose {
 		log.Printf("Added manual request: %v\n", path)
 	}
 
 	// It's just an easier way to create third-party middlewares
-	appendHTTP(start_time, path, status_code, span_id, parent_span_id, isProblem)
+	appendHTTP(start_time, path, status_code, span_id, parent_span_id, isProblem, headers)
 }
