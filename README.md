@@ -52,7 +52,7 @@ Get an API KEY via your shell or signup manually [here](https://deferpanic.com/s
 
 ### HTTP Examples
 
-Here we have 4 examples:
+Here we have 3 examples:
 * log a fast request
 * log a slow request
 * log a panic
@@ -61,48 +61,89 @@ Here we have 4 examples:
 package main
 
 import (
-        "fmt"
-        "github.com/deferpanic/deferclient/deferstats"
-        "net/http"
-        "time"
+	"fmt"
+	"github.com/deferpanic/deferclient/deferstats"
+	"net/http"
+	"time"
 )
 
 func panicHandler(w http.ResponseWriter, r *http.Request) {
-        panic("there is no need to panic")
+	panic("there is no need to panic")
 }
 
 func fastHandler(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "this request is fast")
+	fmt.Fprintf(w, "this request is fast")
 }
 
 func slowHandler(w http.ResponseWriter, r *http.Request) {
-        time.Sleep(3 * time.Second)
-        fmt.Fprintf(w, "this request is slow")
+	time.Sleep(3 * time.Second)
+	fmt.Fprintf(w, "this request is slow")
 }
 
 func main() {
-        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+	dps := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
 
-        go deferstats.CaptureStats()
+	go dps.CaptureStats()
 
-        http.HandleFunc("/fast", deferstats.HTTPHandler(fastHandler))
-        http.HandleFunc("/slow", deferstats.HTTPHandler(slowHandler))
-        http.HandleFunc("/panic", deferstats.HTTPHandler(panicHandler))
+	http.HandleFunc("/fast", dps.HTTPHandler(fastHandler))
+	http.HandleFunc("/slow", dps.HTTPHandler(slowHandler))
+	http.HandleFunc("/panic", dps.HTTPHandler(panicHandler))
 
-        http.ListenAndServe(":3000", nil)
+	http.ListenAndServe(":3000", nil)
 }
 ```
 
+You can see that our slow request triggers our latency threshold and
+winds up in our dashboard while the panic is also caught and winds up in
+the dashboard.
+
 The client works perfectly fine in non-HTTP applications:
 
-### Non-HTTP Errors/Panics - automatic errors
+### Errors - explicitly log
+If you want to explicitly log your errors use this method. deferstats.Wrap
+will log the bactrace and the error and ship it up to deferpanic
+immediately.
+
+```go
+package main
+
+import (
+        "errors"
+        "fmt"
+        "github.com/deferpanic/deferclient/deferstats"
+        "time"
+)
+
+var (
+        dps *deferstats.Client
+)
+
+func errorTest() {
+        err := errors.New("danger will robinson!")
+        if err != nil {
+                dps.Wrap(err)
+                fmt.Println(err)
+        }
+}
+
+func main() {
+        dps = deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
+
+        errorTest()
+
+        time.Sleep(5 * time.Second)
+}
+```
+
+###  automatic errors
 Here we log both an error and a panic. If you want us to catch your
 errors when you instantiate them use this method. We'll create a new
 deferpanic error that is returned and the error will be shipped to
 deferpanic.
 
 Note: This can produce a tremendous amount of error activity so you
-might only want to use it when necessary.
+might only want to use it when necessary. Also, eventually this will
+probably become a different client.
 
 ```go
 package main
@@ -136,73 +177,40 @@ func main() {
 }
 ```
 
-### Errors - explicitly log
-If you want to explicitly log your errors use this method. deferstats.Wrap
-will log the bactrace and the error and ship it up to deferpanic
-immediately.
-
-```go
-package main
-
-import (
-        "errors"
-        "fmt"
-        "github.com/deferpanic/deferclient/deferstats"
-        "time"
-)
-
-func errorTest() {
-        err := errors.New("danger will robinson!")
-        if err != nil {
-                deferstats.Wrap(err)
-                fmt.Println(err)
-        }
-}
-
-func main() {
-
-        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
-
-        errorTest()
-
-        time.Sleep(5 * time.Second)
-}
-```
-
 ### Database Latency
 
 ```
 package main
 
 import (
-        "database/sql"
-        "github.com/deferpanic/deferclient/deferstats"
-        _ "github.com/lib/pq"
-        "log"
-        "time"
+  "database/sql"
+  "github.com/deferpanic/deferclient/deferstats"
+  _ "github.com/lib/pq"
+  "log"
+  "time"
 )
 
 func main() {
-        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+  dps := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
 
-        _db, err := sql.Open("postgres", "dbname=dptest sslmode=disable")
-        db := deferstats.NewDB(_db)
+  _db, err := sql.Open("postgres", "dbname=dptest sslmode=disable")
+  db := deferstats.NewDB(_db)
 
-        go deferstats.CaptureStats()
+  go dps.CaptureStats()
 
-        var id int
-        var sleep string
-        err = db.QueryRow("select 1 as num, pg_sleep(0.25)").Scan(&id, &sleep)
-        if err != nil {
-                log.Println("oh no!")
-        }
+  var id int
+  var sleep string
+  err = db.QueryRow("select 1 as num, pg_sleep(0.25)").Scan(&id, &sleep)
+  if err != nil {
+    log.Println("oh no!")
+  }
 
-        err = db.QueryRow("select 1 as num, pg_sleep(2)").Scan(&id, &sleep)
-        if err != nil {
-                log.Println("oh no!")
-        }
+  err = db.QueryRow("select 1 as num, pg_sleep(2)").Scan(&id, &sleep)
+  if err != nil {
+    log.Println("oh no!")
+  }
 
-        time.Sleep(3 * time.Second)
+  time.Sleep(120 * time.Second)
 }
 ```
 
@@ -219,18 +227,18 @@ counter over time.
 package main
 
 import (
-        "github.com/deferpanic/deferclient/deferkv"
-        "time"
+	"github.com/deferpanic/deferclient/deferkv"
+	"time"
 )
 
 func main() {
-        deferkv.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+	dkv := deferkv.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
 
-        deferkv.Report("some_key", 10)
+	dkv.Report("some_key", 10)
 
-        deferkv.Report("some_other_key", 30)
+	dkv.Report("some_other_key", 30)
 
-        time.Sleep(5 * time.Second)
+	time.Sleep(5 * time.Second)
 }
 ```
 
@@ -246,35 +254,35 @@ User Facing Service
 package main
 
 import (
-    "fmt"
-    "github.com/deferpanic/deferclient/deferstats"
-    "io/ioutil"
-    "net/http"
-    "net/url"
+	"fmt"
+	"github.com/deferpanic/deferclient/deferstats"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
 
-    // just pass your spanId w/each request
-    resp, err := http.PostForm("http://127.0.0.1:7070/internal",
-        url.Values{"defer_parent_span_id": {deferstats.GetSpanIdString(w)}})
-    if err != nil {
-        fmt.Println(err)
-    }
+	// just pass your spanId w/each request
+	resp, err := http.PostForm("http://127.0.0.1:7070/internal",
+		url.Values{"defer_parent_span_id": {deferstats.GetSpanIdString(w)}})
+	if err != nil {
+		fmt.Println(err)
+	}
 
-    defer resp.Body.Close()
-    body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
 
-    fmt.Fprintf(w, string(body))
+	fmt.Fprintf(w, string(body))
 }
 
 func main() {
-    deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+	dfs := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
 
-    go deferstats.CaptureStats()
+	go dfs.CaptureStats()
 
-    http.HandleFunc("/", deferstats.HTTPHandler(handler))
-    http.ListenAndServe(":9090", nil)
+	http.HandleFunc("/", dfs.HTTPHandler(handler))
+	http.ListenAndServe(":9090", nil)
 }
 ```
 
@@ -283,40 +291,40 @@ Slow Internal API
 package main
 
 import (
-        "encoding/json"
-        "github.com/deferpanic/deferclient/deferstats"
-        "net/http"
-        "time"
+	"encoding/json"
+	"github.com/deferpanic/deferclient/deferstats"
+	"net/http"
+	"time"
 )
 
 type blah struct {
-        Stuff string
+	Stuff string
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-        time.Sleep(250 * time.Millisecond)
+	time.Sleep(250 * time.Millisecond)
 
-        stuff := blah{
-                Stuff: "some reply",
-        }
+	stuff := blah{
+		Stuff: "some reply",
+	}
 
-        js, err := json.Marshal(stuff)
-        if err != nil {
-                http.Error(w, err.Error(), http.StatusInternalServerError)
-                return
-        }
+	js, err := json.Marshal(stuff)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-        w.Header().Set("Content-Type", "application/json")
-        w.Write(js)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
 
 func main() {
-        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+	dfs := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
 
-        go deferstats.CaptureStats()
+	go dfs.CaptureStats()
 
-        http.HandleFunc("/internal", deferstats.HTTPHandler(handler))
-        http.ListenAndServe(":7070", nil)
+	http.HandleFunc("/internal", dfs.HTTPHandler(handler))
+	http.ListenAndServe(":7070", nil)
 }
 ```
 
@@ -332,14 +340,20 @@ be tagged this way. Then you can change it from your settings in your
 dashboard.
 
 ```go
+package main
+
+import (
+	"github.com/deferpanic/deferclient/deferstats"
+	"time"
+)
+
 func main() {
-        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
-        deferstats.Environment = "some-other-environment"
+	dfs := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
+	dfs.Setenvironment("some-other-environment")
 
-        go deferstats.CaptureStats()
+	go dfs.CaptureStats()
 
-        http.HandleFunc("/internal", deferstats.HTTPHandler(handler))
-        http.ListenAndServe(":7070", nil)
+	time.Sleep(120 * time.Second)
 }
 ```
 
@@ -351,14 +365,20 @@ You can set this via the AppGroup variable and then toggle it from your
 settings in your dashboard.
 
 ```go
+package main
+
+import (
+  "github.com/deferpanic/deferclient/deferstats"
+  "time"
+)
+
 func main() {
-        deferstats.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
-        deferstats.AppGroup = "queueMaster3000"
+  dfs := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
+  dfs.SetappGroup("queueMaster3000")
 
-        go deferstats.CaptureStats()
+  go dfs.CaptureStats()
 
-        http.HandleFunc("/internal", deferstats.HTTPHandler(handler))
-        http.ListenAndServe(":7070", nil)
+  time.Sleep(120 * time.Second)
 }
 ```
 

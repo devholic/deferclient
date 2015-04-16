@@ -7,16 +7,19 @@ import (
 	"runtime"
 )
 
-// Token is your deferpanic token available in settings
-var Token string
+var (
 
-// Environment sets an environment tag to differentiate between separate
-// environments - default is production.
-var Environment = "production"
+	// Token is your deferpanic token available in settings
+	Token string
 
-// AppGroup sets an optional tag to differentiate between your various
-// services - default is default
-var AppGroup = "default"
+	// Environment sets an environment tag to differentiate between separate
+	// environments - default is production.
+	Environment = "production"
+
+	// AppGroup sets an optional tag to differentiate between your various
+	// services - default is default
+	AppGroup = "default"
+)
 
 // Backtrace grabs the backtrace
 func BackTrace() (body string) {

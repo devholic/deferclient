@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// FIXME
 var (
 	// Querylist is the list of db_queries that will be sent to
 	// deferpanic
@@ -16,6 +17,8 @@ var (
 	selectThreshold int
 )
 
+// DB wraps sql.DB to provide latency timing against various db
+// operations
 type DB struct {
 	Other *sql.DB
 }
@@ -67,6 +70,8 @@ func NewDB(db *sql.DB) *DB {
 	}
 }
 
+// logQuery takes a startTime and a query string and if it is over the
+// selectThreshold than it appends to a long running query list
 func (db *DB) logQuery(startTime time.Time, query string) {
 	endTime := time.Now()
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
