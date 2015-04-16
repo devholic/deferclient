@@ -13,6 +13,8 @@ import (
 	"github.com/deferpanic/deferclient/deferclient"
 )
 
+// FIXME
+// soon to be DEPRECATED
 var (
 	// curlist holds an array of DeferHTTPs (uri && latency)
 	curlist = &deferHTTPList{}
@@ -38,6 +40,23 @@ type DeferHTTP struct {
 type deferHTTPList struct {
 	lock sync.RWMutex
 	list []DeferHTTP
+}
+
+// tracingResponseWriter implements a responsewriter with status
+// exportable
+type tracingResponseWriter interface {
+	http.ResponseWriter
+	Status() int
+	Size() int
+}
+
+// responseTracer implements a responsewriter with spanId/parentSpanId
+type responseTracer struct {
+	w            http.ResponseWriter
+	status       int
+	size         int
+	SpanId       int64
+	ParentSpanId int64
 }
 
 // Add adds a DeferHTTP object to the list
@@ -109,22 +128,6 @@ func GetSpanId(r http.ResponseWriter) int64 {
 	return mPtr.SpanId
 }
 
-// tracingResponseWriter implements a responsewriter with status
-// exportable
-type tracingResponseWriter interface {
-	http.ResponseWriter
-	Status() int
-	Size() int
-}
-
-type responseTracer struct {
-	w            http.ResponseWriter
-	status       int
-	size         int
-	SpanId       int64
-	ParentSpanId int64
-}
-
 func (l *responseTracer) newId() int64 {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return r.Int63()
@@ -162,6 +165,57 @@ func (l *responseTracer) Size() int {
 
 // HTTPHandler wraps a http handler and captures the latency of each
 // request
+// this currently happens in a global list :( - TBFS
+func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		startTime := time.Now()
+
+		var tracer *responseTracer
+
+		tracer = &responseTracer{
+			w: w,
+		}
+
+		tracer.SpanId = tracer.newId()
+
+		deferParentSpanId := r.FormValue("defer_parent_span_id")
+		if deferParentSpanId != "" {
+			if c.Verbose {
+				log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
+			}
+			tracer.ParentSpanId, _ = strconv.ParseInt(deferParentSpanId, 10, 64)
+		}
+
+		// add headers
+		headers := make(map[string]string, len(r.Header))
+
+		for k, v := range r.Header {
+			headers[k] = strings.Join(v, ",")
+		}
+
+		defer func() {
+			if err := recover(); err != nil {
+				c.BaseClient.Prep(err, tracer.SpanId)
+
+				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId,
+					true, headers)
+
+				errorMsg := fmt.Sprintf("%v", err)
+				WritePanicResponse(w, r, errorMsg)
+			}
+		}()
+
+		f(tracer, r)
+
+		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
+			false, headers)
+	}
+}
+
+// HTTPHandler wraps a http handler and captures the latency of each
+// request
+// this currently happens in a global list :( - TBFS
 func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -199,7 +253,8 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 
 				deferclient.Prep(err, tracer.SpanId)
 
-				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId, true, headers)
+				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId,
+					true, headers)
 
 				errorMsg := fmt.Sprintf("%v", err)
 				WritePanicResponse(w, r, errorMsg)
@@ -208,7 +263,8 @@ func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.Res
 
 		f(tracer, r)
 
-		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId, false, headers)
+		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
+			false, headers)
 	}
 }
 

@@ -26,6 +26,13 @@ func BackTrace() (body string) {
 }
 
 // Wrap wraps an error and ships the backtrace to deferpanic
+func (c *Client) Wrap(err error) {
+	stack := BackTrace()
+
+	go c.BaseClient.ShipTrace(stack, err.Error(), 0)
+}
+
+// Wrap wraps an error and ships the backtrace to deferpanic
 func Wrap(err error) {
 	stack := BackTrace()
 	deferclient.Token = Token
