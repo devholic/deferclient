@@ -283,8 +283,14 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 401 {
+	switch resp.StatusCode {
+	case 401:
 		log.Println("wrong or invalid API token")
+	case 429:
+		log.Println("too many requests - you are being rate limited")
+	case 503:
+		log.Println("service not available")
+	default:
 	}
 
 }
