@@ -382,6 +382,30 @@ func main() {
 }
 ```
 
+### Disable posting to deferpanic for test/dev environments
+Pretty much everyone needs to disable the client in a dev/test mode
+otherwise you are going to be overwhelmed with notifications.
+
+You can disable it simply by using the setter function SetnoPost.
+
+```go
+package main
+
+import (
+  "github.com/deferpanic/deferclient/deferstats"
+  "time"
+)
+
+func main() {
+  dfs := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
+  dfs.SetnoPost(true)
+
+  go dfs.CaptureStats()
+
+  time.Sleep(120 * time.Second)
+}
+```
+
 ### Documentation
 
 See https://godoc.org/github.com/deferpanic/deferclient for documentation.
