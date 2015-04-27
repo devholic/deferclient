@@ -99,6 +99,10 @@ type Client struct {
 	// services - default is default
 	appGroup string
 
+	// noPost when set to true disables reporting to deferpanic - useful
+	// for dev/test envs
+	noPost bool
+
 	// BaseClient is the base deferpanic client that all http requests use
 	BaseClient *deferclient.DeferPanicClient
 }
@@ -117,11 +121,13 @@ func NewClient(token string) *Client {
 		Token:          token,
 		environment:    "production",
 		appGroup:       "default",
+		noPost:         false,
 	}
 
 	ds.BaseClient = deferclient.NewDeferPanicClient(token)
 	ds.BaseClient.Environment = ds.environment
 	ds.BaseClient.AppGroup = ds.appGroup
+	ds.BaseClient.NoPost = ds.noPost
 
 	return ds
 }
@@ -138,6 +144,13 @@ func (c *Client) Setenvironment(environment string) {
 func (c *Client) SetappGroup(appGroup string) {
 	c.appGroup = appGroup
 	c.BaseClient.AppGroup = c.appGroup
+}
+
+// Setnopost disables reporting to deferpanic
+// default is false
+func (c *Client) SetnoPost(noPost bool) {
+	c.noPost = noPost
+	c.BaseClient.NoPost = c.noPost
 }
 
 // CaptureStats POSTs DeferStats every statsFrequency
