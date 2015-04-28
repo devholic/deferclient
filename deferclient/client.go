@@ -266,6 +266,10 @@ func (c *DeferPanicClient) ShipTrace(exception string, errorstr string, spanId i
 // Postit Posts an API request w/b body to url and sets appropriate
 // headers
 func (c *DeferPanicClient) Postit(b []byte, url string) {
+	if c.NoPost {
+		return
+	}
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
 
 	req.Header.Set("X-deferid", c.Token)
