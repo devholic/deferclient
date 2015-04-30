@@ -1,7 +1,10 @@
 package deferstats
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/deferpanic/deferclient/deferclient"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -9,8 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/deferpanic/deferclient/deferclient"
 )
 
 // FIXME
@@ -166,9 +167,16 @@ func (l *responseTracer) Size() int {
 // HTTPHandler wraps a http handler and captures the latency of each
 // request
 // this currently happens in a global list :( - TBFS
-func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// cp body - header read inadvert reads this
+		var bodyBytes []byte
+		if r.Body != nil {
+			bodyBytes, _ = ioutil.ReadAll(r.Body)
+		}
+
 		startTime := time.Now()
 
 		var tracer *responseTracer
@@ -205,6 +213,9 @@ func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) fun
 				WritePanicResponse(w, r, errorMsg)
 			}
 		}()
+
+		// Restore our body to use in the request
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
 		f(tracer, r)
 
