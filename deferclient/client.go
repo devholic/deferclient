@@ -84,7 +84,6 @@ type DeferJSON struct {
 
 // NewDeferPanicClient instantiates and returns a new deferpanic client
 func NewDeferPanicClient(token string) *DeferPanicClient {
-
 	a := NewAgent()
 
 	dc := &DeferPanicClient{
@@ -95,16 +94,6 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 		PrintPanics: false,
 		NoPost:      false,
 	}
-
-	// log new agent
-	b, err := json.Marshal(a)
-	if err != nil {
-		log.Println(err)
-	}
-
-	agentUrl := ApiBase + "/agent_ids/create"
-
-	dc.Postit(b, agentUrl)
 
 	return dc
 }

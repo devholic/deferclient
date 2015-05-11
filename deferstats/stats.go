@@ -155,6 +155,10 @@ func (c *Client) SetnoPost(noPost bool) {
 
 // CaptureStats POSTs DeferStats every statsFrequency
 func (c *Client) CaptureStats() {
+	if !c.noPost {
+		c.updateAgent()
+	}
+
 	tickerChannel := time.Tick(time.Duration(c.statsFrequency) * time.Second)
 	for tc := range tickerChannel {
 
@@ -165,6 +169,22 @@ func (c *Client) CaptureStats() {
 			log.Printf("Captured at:%v\n", tc)
 		}
 	}
+}
+
+// updateAgent sets the agent details
+func (c *Client) updateAgent() {
+	if c.noPost {
+		return
+	}
+
+	b, err := json.Marshal(c.BaseClient.Agent)
+	if err != nil {
+		log.Println(err)
+	}
+
+	agentUrl := deferclient.ApiBase + "/agent_ids/create"
+
+	c.BaseClient.Postit(b, agentUrl)
 }
 
 // capture does a one time collection of DeferStats
