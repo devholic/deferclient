@@ -1,7 +1,6 @@
 package deferclient
 
 import (
-	"log"
 	"net"
 	"os"
 	"runtime"
@@ -48,9 +47,6 @@ func NewAgent() *Agent {
 
 	m := Mem{}
 	m.SetTotal()
-
-	log.Println("mem ")
-	log.Println(m.Total)
 
 	a := &Agent{
 		Cpucores: runtime.NumCPU(),

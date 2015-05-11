@@ -21,8 +21,7 @@ const (
 	ApiVersion = "v1.8"
 
 	// ApiBase is the base url that client requests goto
-	// ApiBase = "https://api.deferpanic.com/" + ApiVersion
-	ApiBase = "http://127.0.0.1:8080/" + ApiVersion
+	ApiBase = "https://api.deferpanic.com/" + ApiVersion
 
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion
@@ -96,8 +95,6 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 		PrintPanics: false,
 		NoPost:      false,
 	}
-
-	log.Println("using name2 " + a.Name)
 
 	// log new agent
 	b, err := json.Marshal(a)
