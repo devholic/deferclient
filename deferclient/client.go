@@ -18,10 +18,11 @@ import (
 // being DEPRECATED
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.7"
+	ApiVersion = "v1.8"
 
 	// ApiBase is the base url that client requests goto
-	ApiBase = "https://api.deferpanic.com/" + ApiVersion
+	// ApiBase = "https://api.deferpanic.com/" + ApiVersion
+	ApiBase = "http://127.0.0.1:8080/" + ApiVersion
 
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion
@@ -66,7 +67,11 @@ type DeferPanicClient struct {
 	UserAgent   string
 	Environment string
 	AppGroup    string
-	AgentId     string
+
+	// DEPRECATED
+	AgentId string
+
+	Agent       *Agent
 	NoPost      bool
 	PrintPanics bool
 }
@@ -75,25 +80,40 @@ type DeferPanicClient struct {
 type DeferJSON struct {
 	Msg       string `json:"ErrorName"`
 	BackTrace string `json:"Body"`
-	GoVersion string `json:"Version"`
 	SpanId    int64  `json:"SpanId,omitempty"`
 }
 
 // NewDeferPanicClient instantiates and returns a new deferpanic client
 func NewDeferPanicClient(token string) *DeferPanicClient {
 
+	a := NewAgent()
+
 	dc := &DeferPanicClient{
 		Token:       token,
 		UserAgent:   "deferclient " + ApiVersion,
-		AgentId:     agentID(),
+		AgentId:     a.Name,
+		Agent:       a,
 		PrintPanics: false,
 		NoPost:      false,
 	}
+
+	log.Println("using name2 " + a.Name)
+
+	// log new agent
+	b, err := json.Marshal(a)
+	if err != nil {
+		log.Println(err)
+	}
+
+	agentUrl := ApiBase + "/agent_ids/create"
+
+	dc.Postit(b, agentUrl)
 
 	return dc
 }
 
 // agentID sets a 'unique' ID for this agent
+// DEPRECATED
 func agentID() string {
 
 	local := "bad"
@@ -204,14 +224,11 @@ func ShipTrace(exception string, errorstr string, spanId int64) {
 		return
 	}
 
-	goVersion := runtime.Version()
-
 	body := cleanTrace(exception)
 
 	dj := &DeferJSON{
 		Msg:       errorstr,
 		BackTrace: body,
-		GoVersion: goVersion,
 	}
 
 	if spanId > 0 {
@@ -241,14 +258,11 @@ func (c *DeferPanicClient) ShipTrace(exception string, errorstr string, spanId i
 		return
 	}
 
-	goVersion := runtime.Version()
-
 	body := cleanTrace(exception)
 
 	dj := &DeferJSON{
 		Msg:       errorstr,
 		BackTrace: body,
-		GoVersion: goVersion,
 	}
 
 	if spanId > 0 {
@@ -277,7 +291,7 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 	req.Header.Set("User-Agent", c.UserAgent)
 	req.Header.Set("X-dpenv", c.Environment)
 	req.Header.Set("X-dpgroup", c.AppGroup)
-	req.Header.Set("X-dpagentid", c.AgentId)
+	req.Header.Set("X-dpagentid", c.Agent.Name)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
