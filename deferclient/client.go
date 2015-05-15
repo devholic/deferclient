@@ -6,12 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
-	"os"
 	"runtime"
 	"runtime/debug"
-	"strconv"
 	"strings"
 )
 
@@ -67,9 +64,6 @@ type DeferPanicClient struct {
 	Environment string
 	AppGroup    string
 
-	// DEPRECATED
-	AgentId string
-
 	Agent       *Agent
 	NoPost      bool
 	PrintPanics bool
@@ -89,42 +83,12 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 	dc := &DeferPanicClient{
 		Token:       token,
 		UserAgent:   "deferclient " + ApiVersion,
-		AgentId:     a.Name,
 		Agent:       a,
 		PrintPanics: false,
 		NoPost:      false,
 	}
 
 	return dc
-}
-
-// agentID sets a 'unique' ID for this agent
-// DEPRECATED
-func agentID() string {
-
-	local := "bad"
-
-	host, _ := os.Hostname()
-	addrs, _ := net.LookupIP(host)
-	for _, addr := range addrs {
-		if ipv4 := addr.To4(); ipv4 != nil {
-			local = ipv4.String()
-		}
-	}
-
-	pid := os.Getpid()
-
-	return local + "-" + strconv.Itoa(pid)
-}
-
-// Persists ensures any panics will post to deferpanic website for
-// tracking
-// typically used in non http go-routines
-// DEPRECATED
-func Persist() {
-	if err := recover(); err != nil {
-		Prep(err, 0)
-	}
 }
 
 // Persists ensures any panics will post to deferpanic website for
@@ -134,25 +98,6 @@ func (c *DeferPanicClient) Persist() {
 	if err := recover(); err != nil {
 		c.Prep(err, 0)
 	}
-}
-
-// DEPRECATED
-// Prep takes an error && a spanId
-// it cleans up the error/trace before calling ShipTrace
-// if spanId is zero it is ommited
-func Prep(err interface{}, spanId int64) {
-	errorMsg := fmt.Sprintf("%q", err)
-
-	errorMsg = strings.Replace(errorMsg, "\"", "", -1)
-
-	if PrintPanics {
-		stack := string(debug.Stack())
-		fmt.Println(stack)
-	}
-
-	body := backTrace()
-
-	go ShipTrace(body, errorMsg, spanId)
 }
 
 // Prep takes an error && a spanId
@@ -200,41 +145,6 @@ func cleanTrace(body string) string {
 	body = strings.TrimSpace(body)
 
 	return body
-}
-
-// ShipTrace POSTs a DeferJSON json body to the deferpanic website
-// soon to be deprecated
-// if spanId is zero it is ignored
-func ShipTrace(exception string, errorstr string, spanId int64) {
-	if NoPost {
-		return
-	}
-
-	body := cleanTrace(exception)
-
-	dj := &DeferJSON{
-		Msg:       errorstr,
-		BackTrace: body,
-	}
-
-	if spanId > 0 {
-		dj.SpanId = spanId
-	}
-
-	b, err := json.Marshal(dj)
-	if err != nil {
-		log.Println(err)
-	}
-
-	dpc := DeferPanicClient{
-		Token:       Token,
-		UserAgent:   UserAgent,
-		Environment: Environment,
-		AppGroup:    AppGroup,
-		AgentId:     agentID(),
-	}
-
-	dpc.Postit(b, errorsUrl)
 }
 
 // ShipTrace POSTs a DeferJSON json body to the deferpanic website
@@ -297,20 +207,4 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 	default:
 	}
 
-}
-
-// PostIt Posts an API request w/b body to url and sets appropriate
-// headers
-// this is being DEPRECATED
-func PostIt(b []byte, url string) {
-
-	dpc := DeferPanicClient{
-		Token:       Token,
-		UserAgent:   UserAgent,
-		Environment: Environment,
-		AppGroup:    AppGroup,
-		AgentId:     agentID(),
-	}
-
-	dpc.Postit(b, url)
 }

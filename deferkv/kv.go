@@ -6,26 +6,6 @@ import (
 	"log"
 )
 
-// to be DEPRECATED
-const (
-	// kvUrl is the kv api endpoint
-	kvUrl = deferclient.ApiBase + "/kvs/create"
-)
-
-// to be DEPRECATED
-var (
-	// Token is your deferpanic token available in settings
-	Token string
-
-	// Environment sets an environment tag to differentiate between separate
-	// environments - default is production.
-	Environment = "production"
-
-	// AppGroup sets an optional tag to differentiate between your various
-	// services - default is default
-	AppGroup = "default"
-)
-
 // Client is the client used for making k/v request to the
 // defer panic api
 type Client struct {
@@ -99,31 +79,5 @@ func (c *Client) Report(key string, value int) {
 		}
 
 		c.BaseClient.Postit(b, c.kvUrl)
-	}()
-}
-
-// Report takes a key and a value and ships it to deferpanic
-// DEPRECATED
-// please use deferkv.NewClient(token)
-func Report(key string, value int) {
-	log.Println("please consider using deferkv.Client(token)")
-
-	ds := DeferKV{
-		Key:   key,
-		Value: value,
-	}
-
-	go func() {
-		b, err := json.Marshal(ds)
-		if err != nil {
-			log.Println(err)
-		}
-
-		// hack
-		deferclient.Token = Token
-		deferclient.Environment = Environment
-		deferclient.AppGroup = AppGroup
-
-		deferclient.PostIt(b, kvUrl)
 	}()
 }
