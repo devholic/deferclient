@@ -5,12 +5,10 @@
 
 Defer Panic Client Lib.
 
- *  **Error Handling** - DeferClient can auto-wrap your errors to shoot
-    up to deferpanic or you can choose to explicitly log the ones you
-    care about.
-
  *  **Panic Handling** - Let deferclient catch and log any panic you get
     to your own dashboard.
+
+ *  **Error Handling** - Handle your errrors - but log them.
 
  *  **HTTP latency** - DeferClient can log the latencies of all your hard
     hit http requests.
@@ -99,8 +97,8 @@ the dashboard.
 
 The client works perfectly fine in non-HTTP applications:
 
-### Errors - explicitly log
-If you want to explicitly log your errors use this method. deferstats.Wrap
+### Log Errors
+If you want to log your errors use this method. deferstats.Wrap
 will log the bactrace and the error and ship it up to deferpanic
 immediately.
 
@@ -126,55 +124,20 @@ func errorTest() {
         }
 }
 
-func main() {
-        dps = deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
-
-        errorTest()
-
-        time.Sleep(5 * time.Second)
-}
-```
-
-###  automatic errors
-Here we log both an error and a panic. If you want us to catch your
-errors when you instantiate them use this method. We'll create a new
-deferpanic error that is returned and the error will be shipped to
-deferpanic.
-
-Note: This can produce a tremendous amount of error activity so you
-might only want to use it when necessary. Also, eventually this will
-probably become a different client.
-
-```go
-package main
-
-import (
-        "fmt"
-        "github.com/deferpanic/deferclient/deferclient"
-        "github.com/deferpanic/deferclient/errors"
-        "time"
-)
-
-func errorTest() {
-        err := errors.New("erroring out!")
-        if err != nil {
-                fmt.Println(err)
-        }
-}
-
 func panicTest() {
-        defer deferclient.Persist()
+        defer dps.Persist()
         panic("there is no need to panic")
 }
 
 func main() {
-        deferclient.Token = "v00L0K6CdKjE4QwX5DL1iiODxovAHUfo"
+        dps = deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
 
         errorTest()
         panicTest()
 
         time.Sleep(time.Second * 20)
 }
+➜ 
 ```
 
 ### Database Latency

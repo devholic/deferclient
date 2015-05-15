@@ -3,7 +3,6 @@ package deferstats
 import (
 	"bytes"
 	"fmt"
-	"github.com/deferpanic/deferclient/deferclient"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -216,61 +215,6 @@ func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) fun
 
 		// Restore our body to use in the request
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
-		f(tracer, r)
-
-		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
-			false, headers)
-	}
-}
-
-// HTTPHandler wraps a http handler and captures the latency of each
-// request
-// this currently happens in a global list :( - TBFS
-func HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		startTime := time.Now()
-
-		var tracer *responseTracer
-
-		tracer = &responseTracer{
-			w: w,
-		}
-
-		tracer.SpanId = tracer.newId()
-
-		deferParentSpanId := r.FormValue("defer_parent_span_id")
-		if deferParentSpanId != "" {
-			if Verbose {
-				log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
-			}
-			tracer.ParentSpanId, _ = strconv.ParseInt(deferParentSpanId, 10, 64)
-		}
-
-		// add headers
-		headers := make(map[string]string, len(r.Header))
-
-		for k, v := range r.Header {
-			headers[k] = strings.Join(v, ",")
-		}
-
-		defer func() {
-			if err := recover(); err != nil {
-				// hack - FIXME
-				deferclient.Token = Token
-				deferclient.Environment = Environment
-				deferclient.AppGroup = AppGroup
-
-				deferclient.Prep(err, tracer.SpanId)
-
-				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId,
-					true, headers)
-
-				errorMsg := fmt.Sprintf("%v", err)
-				WritePanicResponse(w, r, errorMsg)
-			}
-		}()
 
 		f(tracer, r)
 

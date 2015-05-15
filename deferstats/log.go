@@ -3,7 +3,6 @@ package deferstats
 
 import (
 	"fmt"
-	"github.com/deferpanic/deferclient/deferclient"
 	"runtime"
 )
 
@@ -32,17 +31,16 @@ func (c *Client) Wrap(err error) {
 	go c.BaseClient.ShipTrace(stack, err.Error(), 0)
 }
 
-// Wrap wraps an error and ships the backtrace to deferpanic
-func Wrap(err error) {
-	stack := BackTrace()
-	deferclient.Token = Token
-	deferclient.Environment = Environment
-	deferclient.AppGroup = AppGroup
-
-	go deferclient.ShipTrace(stack, err.Error(), 0)
-}
-
 // WrapHTTPError wraps an error that occurs w/in a http request and
 // sends the error to deferpanic w/the spanId
 func WrapHTTPError(spanId int64, err error) {
+}
+
+// Persists ensures any panics will post to deferpanic website for
+// tracking
+// typically used in non http go-routines
+func (c *Client) Persist() {
+	if err := recover(); err != nil {
+		c.BaseClient.Prep(err, 0)
+	}
 }
