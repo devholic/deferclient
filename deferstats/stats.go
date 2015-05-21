@@ -2,8 +2,12 @@
 package deferstats
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
+	"os"
+	"os/exec"
 	"runtime"
 	"runtime/debug"
 	"strconv"
@@ -21,18 +25,6 @@ const (
 
 	// statsUrl is the stats api endpoint
 	statsUrl = deferclient.ApiBase + "/stats/create"
-
-	// GrabGC determines if we should grab gc stats
-	GrabGC = true
-
-	// GrabMem determines if we should grab mem stats
-	GrabMem = true
-
-	// GrabGR determines if we should grab go routine stats
-	GrabGR = true
-
-	// GrabCgo determines if we should grab cgo count
-	GrabCgo = true
 )
 
 // being DEPRECATED
@@ -41,17 +33,6 @@ const (
 var (
 	// Token is your deferpanic token available in settings
 	Token string
-
-	// Verbose logs any stats output - for testing/dev
-	Verbose bool = false
-
-	// Environment sets an environment tag to differentiate between separate
-	// environments - default is production.
-	Environment = "production"
-
-	// AppGroup sets an optional tag to differentiate between your various
-	// services - default is default
-	AppGroup = "default"
 )
 
 // DeferStats captures {mem, gc, goroutines and http calls}
@@ -60,6 +41,7 @@ type DeferStats struct {
 	GC         string      `json:"GC"`
 	GoRoutines string      `json:"GoRoutines"`
 	Cgos       string      `json:"Cgos"`
+	Fds        string      `json:"Fds"`
 	HTTPs      []DeferHTTP `json:"HTTPs"`
 	DBs        []DeferDB   `json:"DBs"`
 }
@@ -84,6 +66,9 @@ type Client struct {
 
 	// GrabCgo determines if we should grab cgo count
 	GrabCgo bool
+
+	// GrabFd determines if we should grab fd count
+	GrabFd bool
 
 	// Token is your deferpanic token available in settings
 	Token string
@@ -117,6 +102,7 @@ func NewClient(token string) *Client {
 		GrabMem:        true,
 		GrabGR:         true,
 		GrabCgo:        true,
+		GrabFd:         true,
 		Verbose:        false,
 		Token:          token,
 		environment:    "production",
@@ -215,10 +201,16 @@ func (c *Client) capture() {
 		cgos = strconv.FormatInt(runtime.NumCgoCall(), 10)
 	}
 
+	fds := ""
+	if c.GrabFd {
+		fds = strconv.Itoa(openFileCnt())
+	}
+
 	ds := DeferStats{
 		Mem:        mems,
 		GoRoutines: grs,
 		Cgos:       cgos,
+		Fds:        fds,
 		HTTPs:      curlist.List(),
 		DBs:        Querylist.List(),
 		GC:         gcs,
@@ -237,4 +229,14 @@ func (c *Client) capture() {
 
 		c.BaseClient.Postit(b, c.statsUrl)
 	}()
+}
+
+// openFileCnt returns the number of open files in this process
+func openFileCnt() int {
+	out, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("lsof -p %v", os.Getpid())).Output()
+	if err != nil {
+		log.Println(err.Error())
+		return 0
+	}
+	return bytes.Count(out, []byte("\n"))
 }

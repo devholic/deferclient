@@ -222,17 +222,3 @@ func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) fun
 			false, headers)
 	}
 }
-
-// AddRequest allows external libraries to add a http request
-//
-// TODO: Refactor my usage
-func AddRequest(start_time time.Time, path string, status_code int, span_id int64,
-	parent_span_id int64, isProblem bool, headers map[string]string) {
-
-	if Verbose {
-		log.Printf("Added manual request: %v\n", path)
-	}
-
-	// It's just an easier way to create third-party middlewares
-	appendHTTP(start_time, path, status_code, span_id, parent_span_id, isProblem, headers)
-}

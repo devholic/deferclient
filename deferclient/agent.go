@@ -14,12 +14,13 @@ type Mem struct {
 
 // Agent contains information about this client's agent
 type Agent struct {
-	Name     string `json:"Name"`
-	Cpucores int    `json:"Cpucores"`
-	Goarch   string `json:"goarch"`
-	Goos     string `json:"goos"`
-	Totalmem uint64 `json:"totalmem"`
-	Govers   string `json:"govers"`
+	Name       string `json:"Name"`
+	Cpucores   int    `json:"Cpucores"`
+	Goarch     string `json:"goarch"`
+	Goos       string `json:"goos"`
+	Totalmem   uint64 `json:"totalmem"`
+	Govers     string `json:"govers"`
+	ApiVersion string `json:"ApiVersion"`
 }
 
 // SetName sets a 'unique'ish id for this agent
@@ -49,11 +50,12 @@ func NewAgent() *Agent {
 	m.SetTotal()
 
 	a := &Agent{
-		Cpucores: runtime.NumCPU(),
-		Goarch:   runtime.GOARCH,
-		Goos:     runtime.GOOS,
-		Totalmem: m.Total,
-		Govers:   runtime.Version(),
+		Cpucores:   runtime.NumCPU(),
+		Goarch:     runtime.GOARCH,
+		Goos:       runtime.GOOS,
+		Totalmem:   m.Total,
+		Govers:     runtime.Version(),
+		ApiVersion: ApiVersion,
 	}
 
 	a.SetName()
