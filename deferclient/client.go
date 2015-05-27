@@ -12,10 +12,9 @@ import (
 	"strings"
 )
 
-// being DEPRECATED
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.9"
+	ApiVersion = "v1.10"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
@@ -37,21 +36,6 @@ var (
 	// dev/test environments
 	// this is being DEPRECATED
 	NoPost = false
-
-	// PrintPanics controls whether or not the HTTPHandler function prints
-	// recovered panics. It is disabled by default.
-	// this is being DEPRECATED
-	PrintPanics = false
-
-	// Environment sets an environment tag to differentiate between separate
-	// environments - default is production.
-	// this is being DEPRECATED
-	Environment = "production"
-
-	// AppGroup sets an optional tag to differentiate between your various
-	// services - default is default
-	// this is being DEPRECATED
-	AppGroup = "default"
 )
 
 // DeferPanicClient is the base struct for making requests to the defer

@@ -27,6 +27,7 @@ var (
 // DeferHTTP holds the path uri and latency for each request
 type DeferHTTP struct {
 	Path         string            `json:"Path"`
+	Method       string            `json:"Method"`
 	StatusCode   int               `json:"StatusCode"`
 	Time         int               `json:"Time"`
 	SpanId       int64             `json:"SpanId"`
@@ -92,7 +93,7 @@ var WritePanicResponse = func(w http.ResponseWriter, r *http.Request, errMsg str
 }
 
 // appendHTTP adds a new http request to the list
-func appendHTTP(startTime time.Time, path string, status_code int, span_id int64,
+func appendHTTP(startTime time.Time, path string, method string, status_code int, span_id int64,
 	parent_span_id int64, isProblem bool, headers map[string]string) {
 	endTime := time.Now()
 
@@ -103,6 +104,7 @@ func appendHTTP(startTime time.Time, path string, status_code int, span_id int64
 
 		dh := DeferHTTP{
 			Path:         path,
+			Method:       method,
 			Time:         t,
 			StatusCode:   status_code,
 			SpanId:       span_id,
@@ -166,7 +168,7 @@ func (l *responseTracer) Size() int {
 // HTTPHandler wraps a http handler and captures the latency of each
 // request
 // this currently happens in a global list :( - TBFS
-func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
+func (c *Client) HTTPHandlerFunc(f http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -205,7 +207,7 @@ func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) fun
 			if err := recover(); err != nil {
 				c.BaseClient.Prep(err, tracer.SpanId)
 
-				appendHTTP(startTime, r.URL.Path, 500, tracer.SpanId, tracer.ParentSpanId,
+				appendHTTP(startTime, r.URL.Path, r.Method, 500, tracer.SpanId, tracer.ParentSpanId,
 					true, headers)
 
 				errorMsg := fmt.Sprintf("%v", err)
@@ -218,7 +220,7 @@ func (c *Client) HTTPHandler(f func(w http.ResponseWriter, r *http.Request)) fun
 
 		f(tracer, r)
 
-		appendHTTP(startTime, r.URL.Path, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
+		appendHTTP(startTime, r.URL.Path, r.Method, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
 			false, headers)
 	}
 }
