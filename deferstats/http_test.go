@@ -18,7 +18,7 @@ func TestHTTPPost(t *testing.T) {
 	dps := NewClient("token")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", dps.HTTPHandler(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", dps.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			panic(err)
@@ -63,7 +63,7 @@ func TestHTTPHeader(t *testing.T) {
 	dps := NewClient("token")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", dps.HTTPHandler(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", dps.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("X-Custom-Header") != "some header" {
 			t.Error("headers not being passed through")
 		}
