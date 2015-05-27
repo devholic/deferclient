@@ -83,9 +83,9 @@ func main() {
 
 	go dps.CaptureStats()
 
-	http.HandleFunc("/fast", dps.HTTPHandler(fastHandler))
-	http.HandleFunc("/slow", dps.HTTPHandler(slowHandler))
-	http.HandleFunc("/panic", dps.HTTPHandler(panicHandler))
+	http.HandleFunc("/fast", dps.HTTPHandlerFunc(fastHandler))
+	http.HandleFunc("/slow", dps.HTTPHandlerFunc(slowHandler))
+	http.HandleFunc("/panic", dps.HTTPHandlerFunc(panicHandler))
 
 	http.ListenAndServe(":3000", nil)
 }
@@ -244,7 +244,7 @@ func main() {
 
 	go dfs.CaptureStats()
 
-	http.HandleFunc("/", dfs.HTTPHandler(handler))
+	http.HandleFunc("/", dfs.HTTPHandlerFunc(handler))
 	http.ListenAndServe(":9090", nil)
 }
 ```
@@ -286,7 +286,7 @@ func main() {
 
 	go dfs.CaptureStats()
 
-	http.HandleFunc("/internal", dfs.HTTPHandler(handler))
+	http.HandleFunc("/internal", dfs.HTTPHandlerFunc(handler))
 	http.ListenAndServe(":7070", nil)
 }
 ```
@@ -368,6 +368,11 @@ func main() {
   time.Sleep(120 * time.Second)
 }
 ```
+
+### Dependencies
+
+There are currently no dependencies so this should work out of the box
+for containers like docker && rocket.
 
 ### Documentation
 
