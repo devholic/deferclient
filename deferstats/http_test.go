@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -42,10 +43,10 @@ func TestHTTPPost(t *testing.T) {
 
 	go http.Serve(l, mux)
 
-	url := "http://" + l.Addr().String() + "/"
+	lurl := "http://" + l.Addr().String() + "/"
 
 	var jsonStr = []byte(`{"Title":"sample title in json"}`)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", lurl, bytes.NewBuffer(jsonStr))
 	req.Header.Set("X-Custom-Header", "some header")
 	req.Header.Set("Content-Type", "application/json")
 
@@ -83,10 +84,10 @@ func TestHTTPHeader(t *testing.T) {
 
 	go http.Serve(l, mux)
 
-	url := "http://" + l.Addr().String() + "/"
+	lurl := "http://" + l.Addr().String() + "/"
 
 	var jsonStr = []byte(`{"Title":"sample title in json"}`)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", lurl, bytes.NewBuffer(jsonStr))
 	req.Header.Set("X-Custom-Header", "some header")
 	req.Header.Set("Content-Type", "application/json")
 
@@ -96,5 +97,60 @@ func TestHTTPHeader(t *testing.T) {
 		panic(err)
 	}
 	defer resp.Body.Close()
+
+}
+
+func TestSOA(t *testing.T) {
+
+	dps := NewClient("token")
+
+	latencyThreshold = -1
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", dps.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		r.ParseForm()
+
+		dpsi := r.FormValue("defer_parent_span_id")
+		okey := r.FormValue("other_key")
+
+		if dpsi != "8103318854963911860" {
+			t.Error("span not accessible")
+		}
+
+		if okey != "2" {
+			t.Error("other_key not accessible")
+		}
+
+	}))
+
+	// set listener
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Error("http not listening")
+	}
+
+	dps.statsUrl = "http://" + l.Addr().String() + "/"
+
+	go http.Serve(l, mux)
+
+	lurl := "http://" + l.Addr().String() + "/"
+
+	resp, err := http.PostForm(lurl, url.Values{
+		"defer_parent_span_id": {"8103318854963911860"},
+		"other_key":            {"2"},
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if len(curlist.list) == 0 {
+		t.Error("should have a http in the list")
+	}
+
+	if curlist.list[0].ParentSpanId != 8103318854963911860 {
+		t.Error("not tracking our parent_span_id")
+	}
 
 }

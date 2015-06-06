@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -188,7 +189,16 @@ func (c *Client) HTTPHandlerFunc(f http.HandlerFunc) http.HandlerFunc {
 
 		tracer.SpanId = tracer.newId()
 
-		deferParentSpanId := r.FormValue("defer_parent_span_id")
+		v, e := url.ParseQuery(string(bodyBytes))
+		if e != nil {
+			log.Println(e)
+		}
+
+		deferParentSpanId := ""
+		if v["defer_parent_span_id"] != nil {
+			deferParentSpanId = v["defer_parent_span_id"][0]
+		}
+
 		if deferParentSpanId != "" {
 			if c.Verbose {
 				log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
