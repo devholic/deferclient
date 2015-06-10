@@ -36,7 +36,7 @@ Translations:
 * [Русский](README_ru_RU.md)
 
 ### Installation
-``go get github.com/deferpanic/deferclient/deferclient``
+``go get github.com/deferpanic/deferclient/deferstats``
 
 **api key**
 
