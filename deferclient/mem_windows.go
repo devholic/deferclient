@@ -1,10 +1,5 @@
 package deferclient
 
-import (
-	"syscall"
-	"unsafe"
-)
-
 // SetTotal returns the number of bytes on windows
 // currently just a stub
 // FIXME
