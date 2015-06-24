@@ -74,7 +74,7 @@ func fastHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func slowHandler(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(3 * time.Second)
+	time.Sleep(6 * time.Second)
 	fmt.Fprintf(w, "this request is slow")
 }
 

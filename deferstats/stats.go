@@ -15,17 +15,6 @@ import (
 // being DEPRECATED
 //
 // please use deferstats.NewClient(token)
-const (
-	// statsFrequency controls how often to report into deferpanic in seconds
-	statsFrequency = 60
-
-	// statsUrl is the stats api endpoint
-	statsUrl = deferclient.ApiBase + "/stats/create"
-)
-
-// being DEPRECATED
-//
-// please use deferstats.NewClient(token)
 var (
 	// Token is your deferpanic token available in settings
 	Token string

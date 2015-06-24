@@ -14,15 +14,13 @@ import (
 	"time"
 )
 
-// FIXME
-// soon to be DEPRECATED
 var (
 	// curlist holds an array of DeferHTTPs (uri && latency)
 	curlist = &deferHTTPList{}
 
-	// latencyThreshold is the threshold in milliseconds that if
+	// LatencyThreshold is the threshold in milliseconds that if
 	// exceeded a request will be added to the curlist
-	latencyThreshold = 200
+	LatencyThreshold = 500
 )
 
 // DeferHTTP holds the path uri and latency for each request
@@ -100,8 +98,8 @@ func appendHTTP(startTime time.Time, path string, method string, status_code int
 
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
 
-	// only log if t over latencyThreshold or if a panic/error occurred
-	if (t > latencyThreshold) || isProblem {
+	// only log if t over LatencyThreshold or if a panic/error occurred
+	if (t > LatencyThreshold) || isProblem {
 
 		dh := DeferHTTP{
 			Path:         path,
