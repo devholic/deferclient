@@ -104,7 +104,7 @@ func TestSOA(t *testing.T) {
 
 	dps := NewClient("token")
 
-	latencyThreshold = -1
+	LatencyThreshold = -1
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", dps.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
