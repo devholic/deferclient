@@ -22,7 +22,7 @@ Defer Panic Client Lib.
     - go routines
     - memory
     - usage
-    - gc
+    - gc runs && pause times
     - cgo
 
     and more automatically in your own dashboard.
