@@ -61,6 +61,16 @@ func TestClient(t *testing.T) {
 		t.Error("gc not gt 0")
 	}
 
+	lgc, _ := strconv.Atoi(ds.LastGC)
+	if lgc <= 0 {
+		t.Error("last gc not gt 0")
+	}
+
+	lp, _ := strconv.Atoi(ds.LastPause)
+	if lp <= 0 {
+		t.Error("last pause not gt 0")
+	}
+
 	cgos, _ := strconv.ParseInt(ds.Cgos, 10, 64)
 	if cgos <= 0 {
 		t.Error("cgos not gt 0")

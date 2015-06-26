@@ -13,7 +13,6 @@ import (
 )
 
 // being DEPRECATED
-//
 // please use deferstats.NewClient(token)
 var (
 	// Token is your deferpanic token available in settings
@@ -24,6 +23,8 @@ var (
 type DeferStats struct {
 	Mem        string      `json:"Mem"`
 	GC         string      `json:"GC"`
+	LastGC     string      `json:"LastGC"`
+	LastPause  string      `json:"LastPause"`
 	GoRoutines string      `json:"GoRoutines"`
 	Cgos       string      `json:"Cgos"`
 	Fds        string      `json:"Fds"`
@@ -54,6 +55,9 @@ type Client struct {
 
 	// GrabFd determines if we should grab fd count
 	GrabFd bool
+
+	// LastGC keeps track of the last GC run
+	LastGC int64
 
 	// Token is your deferpanic token available in settings
 	Token string
@@ -171,9 +175,11 @@ func (c *Client) capture() {
 	}
 
 	gcs := ""
+	var lastgc int64
 	if c.GrabGC {
 		debug.ReadGCStats(&gc)
 		gcs = strconv.FormatInt(gc.NumGC, 10)
+		lastgc = gc.LastGC.UnixNano()
 	}
 
 	grs := ""
@@ -199,6 +205,12 @@ func (c *Client) capture() {
 		HTTPs:      curlist.List(),
 		DBs:        Querylist.List(),
 		GC:         gcs,
+	}
+
+	if lastgc != c.LastGC {
+		c.LastGC = lastgc
+		ds.LastGC = strconv.FormatInt(c.LastGC, 10)
+		ds.LastPause = strconv.FormatInt(gc.Pause[0].Nanoseconds(), 10)
 	}
 
 	// FIXME
