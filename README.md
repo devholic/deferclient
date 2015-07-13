@@ -182,29 +182,6 @@ We have additional database ORM wrappers:
 [gorp](https://github.com/deferpanic/dpgorp)
 [sqlx](https://github.com/deferpanic/dpsqlx)
 
-### Generic K/V
-If you wish to log other k/v metrics this implements a very basic
-counter over time.
-
-```go
-package main
-
-import (
-	"github.com/deferpanic/deferclient/deferkv"
-	"time"
-)
-
-func main() {
-	dkv := deferkv.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
-
-	dkv.Report("some_key", 10)
-
-	dkv.Report("some_other_key", 30)
-
-	time.Sleep(5 * time.Second)
-}
-```
-
 ### Micro-Services/SOA Tracing
 
 Got a micro-services/SOA architecture? Now you can trace your queries
