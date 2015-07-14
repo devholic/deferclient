@@ -168,69 +168,7 @@ func (l *responseTracer) Size() int {
 // request
 // this currently happens in a global list :( - TBFS
 func (c *Client) HTTPHandlerFunc(f http.HandlerFunc) http.HandlerFunc {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		// cp body - header read inadvert reads this
-		var bodyBytes []byte
-		if r.Body != nil {
-			bodyBytes, _ = ioutil.ReadAll(r.Body)
-		}
-
-		startTime := time.Now()
-
-		var tracer *responseTracer
-
-		tracer = &responseTracer{
-			w: w,
-		}
-
-		tracer.SpanId = tracer.newId()
-
-		v, e := url.ParseQuery(string(bodyBytes))
-		if e != nil {
-			log.Println(e)
-		}
-
-		deferParentSpanId := ""
-		if v["defer_parent_span_id"] != nil {
-			deferParentSpanId = v["defer_parent_span_id"][0]
-		}
-
-		if deferParentSpanId != "" {
-			if c.Verbose {
-				log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
-			}
-			tracer.ParentSpanId, _ = strconv.ParseInt(deferParentSpanId, 10, 64)
-		}
-
-		// add headers
-		headers := make(map[string]string, len(r.Header))
-
-		for k, v := range r.Header {
-			headers[k] = strings.Join(v, ",")
-		}
-
-		defer func() {
-			if err := recover(); err != nil {
-				c.BaseClient.Prep(err, tracer.SpanId)
-
-				appendHTTP(startTime, r.URL.Path, r.Method, 500, tracer.SpanId, tracer.ParentSpanId,
-					true, headers)
-
-				errorMsg := fmt.Sprintf("%v", err)
-				WritePanicResponse(w, r, errorMsg)
-			}
-		}()
-
-		// Restore our body to use in the request
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
-		f(tracer, r)
-
-		appendHTTP(startTime, r.URL.Path, r.Method, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
-			false, headers)
-	}
+	return c.HTTPHandler(f).(http.HandlerFunc)
 }
 
 // HTTPHandler wraps a http handler and captures the latency of each
