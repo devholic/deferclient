@@ -28,6 +28,7 @@ Defer Panic Client Lib.
     and more automatically in your own dashboard.
 
  *  **Custom K/V** - Got something we don't support? You can log your own k/v metrics just as easily.
+    Use this [client](https://github.com/deferpanic/dpkv).
 
 
 Translations:

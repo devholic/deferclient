@@ -3,6 +3,7 @@ package deferstats
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"runtime"
 	"runtime/debug"
@@ -130,6 +131,13 @@ func (c *Client) SetnoPost(noPost bool) {
 
 // CaptureStats POSTs DeferStats every statsFrequency
 func (c *Client) CaptureStats() {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err := fmt.Sprintf("%q", rec)
+			log.Println(err)
+		}
+	}()
+
 	if !c.noPost {
 		c.updateAgent()
 	}
@@ -164,6 +172,12 @@ func (c *Client) updateAgent() {
 
 // capture does a one time collection of DeferStats
 func (c *Client) capture() {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err := fmt.Sprintf("%q", rec)
+			log.Println(err)
+		}
+	}()
 
 	var mem runtime.MemStats
 	var gc debug.GCStats
@@ -219,6 +233,13 @@ func (c *Client) capture() {
 	Querylist.Reset()
 
 	go func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				err := fmt.Sprintf("%q", rec)
+				log.Println(err)
+			}
+		}()
+
 		b, err := json.Marshal(ds)
 		if err != nil {
 			log.Println(err)

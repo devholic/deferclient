@@ -14,7 +14,7 @@ import (
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.11"
+	ApiVersion = "v1.12"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
@@ -160,6 +160,13 @@ func (c *DeferPanicClient) ShipTrace(exception string, errorstr string, spanId i
 // Postit Posts an API request w/b body to url and sets appropriate
 // headers
 func (c *DeferPanicClient) Postit(b []byte, url string) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err := fmt.Sprintf("%q", rec)
+			log.Println(err)
+		}
+	}()
+
 	if c.NoPost {
 		return
 	}
