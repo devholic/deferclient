@@ -164,12 +164,18 @@ func (l *responseTracer) Size() int {
 	return l.size
 }
 
-// HTTPHandler wraps a http handler and captures the latency of each
+// HTTPHandlerFunc wraps a http handler func and captures the latency of each
 // request
 // this currently happens in a global list :( - TBFS
 func (c *Client) HTTPHandlerFunc(f http.HandlerFunc) http.HandlerFunc {
+	return c.HTTPHandler(f).(http.HandlerFunc)
+}
 
-	return func(w http.ResponseWriter, r *http.Request) {
+// HTTPHandler wraps a http handler and captures the latency of each
+// request
+// this currently happens in a global list :( - TBFS
+func (c *Client) HTTPHandler(f http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// cp body - header read inadvert reads this
 		var bodyBytes []byte
@@ -226,9 +232,10 @@ func (c *Client) HTTPHandlerFunc(f http.HandlerFunc) http.HandlerFunc {
 		// Restore our body to use in the request
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-		f(tracer, r)
+		f.ServeHTTP(tracer, r)
 
 		appendHTTP(startTime, r.URL.Path, r.Method, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
 			false, headers)
-	}
+
+	})
 }
