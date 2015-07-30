@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"testing"
 )
 
@@ -203,7 +204,8 @@ func TestSOA(t *testing.T) {
 
 		r.ParseForm()
 
-		dpsi := r.FormValue("defer_parent_span_id")
+		dpsi := r.Header.Get("X-dpparentspanid")
+
 		okey := r.FormValue("other_key")
 
 		if dpsi != "8103318854963911860" {
@@ -228,10 +230,17 @@ func TestSOA(t *testing.T) {
 
 	lurl := "http://" + l.Addr().String() + "/"
 
-	resp, err := http.PostForm(lurl, url.Values{
-		"defer_parent_span_id": {"8103318854963911860"},
-		"other_key":            {"2"},
-	})
+	data := url.Values{}
+	data.Set("other_key", "2")
+
+	client := &http.Client{}
+	r, _ := http.NewRequest("POST", lurl, bytes.NewBufferString(data.Encode()))
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+	r.Header.Add("X-dpparentspanid", "8103318854963911860")
+
+	resp, err := client.Do(r)
+
 	if err != nil {
 		panic(err)
 	}
@@ -259,7 +268,7 @@ func TestSOAHandler(t *testing.T) {
 
 		r.ParseForm()
 
-		dpsi := r.FormValue("defer_parent_span_id")
+		dpsi := r.Header.Get("X-dpparentspanid")
 		okey := r.FormValue("other_key")
 
 		if dpsi != "8103318854963911860" {
@@ -286,10 +295,16 @@ func TestSOAHandler(t *testing.T) {
 
 	lurl := "http://" + l.Addr().String() + "/"
 
-	resp, err := http.PostForm(lurl, url.Values{
-		"defer_parent_span_id": {"8103318854963911860"},
-		"other_key":            {"2"},
-	})
+	data := url.Values{}
+	data.Set("other_key", "2")
+
+	client := &http.Client{}
+	r, _ := http.NewRequest("POST", lurl, bytes.NewBufferString(data.Encode()))
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+	r.Header.Add("X-dpparentspanid", "8103318854963911860")
+
+	resp, err := client.Do(r)
 	if err != nil {
 		panic(err)
 	}

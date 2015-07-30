@@ -1,13 +1,9 @@
 package deferstats
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -98,6 +94,8 @@ func appendHTTP(startTime time.Time, path string, method string, status_code int
 
 	t := int(((endTime.Sub(startTime)).Nanoseconds() / 1000000))
 
+	rpms.Inc(status_code)
+
 	// only log if t over LatencyThreshold or if a panic/error occurred
 	if (t > LatencyThreshold) || isProblem {
 
@@ -177,12 +175,6 @@ func (c *Client) HTTPHandlerFunc(f http.HandlerFunc) http.HandlerFunc {
 func (c *Client) HTTPHandler(f http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// cp body - header read inadvert reads this
-		var bodyBytes []byte
-		if r.Body != nil {
-			bodyBytes, _ = ioutil.ReadAll(r.Body)
-		}
-
 		startTime := time.Now()
 
 		var tracer *responseTracer
@@ -193,28 +185,16 @@ func (c *Client) HTTPHandler(f http.Handler) http.Handler {
 
 		tracer.SpanId = tracer.newId()
 
-		v, e := url.ParseQuery(string(bodyBytes))
-		if e != nil {
-			log.Println(e)
-		}
-
-		deferParentSpanId := ""
-		if v["defer_parent_span_id"] != nil {
-			deferParentSpanId = v["defer_parent_span_id"][0]
-		}
-
-		if deferParentSpanId != "" {
-			if c.Verbose {
-				log.Println("deferParentSpanId: [" + deferParentSpanId + "]")
-			}
-			tracer.ParentSpanId, _ = strconv.ParseInt(deferParentSpanId, 10, 64)
-		}
-
 		// add headers
 		headers := make(map[string]string, len(r.Header))
 
 		for k, v := range r.Header {
 			headers[k] = strings.Join(v, ",")
+
+			// grab SOA tracing header if present
+			if k == "X-Dpparentspanid" {
+				tracer.ParentSpanId, _ = strconv.ParseInt(v[0], 10, 64)
+			}
 		}
 
 		defer func() {
@@ -229,13 +209,10 @@ func (c *Client) HTTPHandler(f http.Handler) http.Handler {
 			}
 		}()
 
-		// Restore our body to use in the request
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
 		f.ServeHTTP(tracer, r)
 
-		appendHTTP(startTime, r.URL.Path, r.Method, tracer.Status(), tracer.SpanId, tracer.ParentSpanId,
-			false, headers)
+		appendHTTP(startTime, r.URL.Path, r.Method, tracer.Status(), tracer.SpanId,
+			tracer.ParentSpanId, false, headers)
 
 	})
 }
