@@ -29,8 +29,9 @@ type DeferStats struct {
 	GoRoutines string      `json:"GoRoutines"`
 	Cgos       string      `json:"Cgos"`
 	Fds        string      `json:"Fds"`
-	HTTPs      []DeferHTTP `json:"HTTPs"`
-	DBs        []DeferDB   `json:"DBs"`
+	HTTPs      []DeferHTTP `json:"HTTPs,omitempty"`
+	DBs        []DeferDB   `json:"DBs,omitempty"`
+	Rpms       Rpm         `json:RPMs,omitempty"`
 }
 
 // Client is the client for making metrics requests to the
@@ -56,6 +57,9 @@ type Client struct {
 
 	// GrabFd determines if we should grab fd count
 	GrabFd bool
+
+	// GrabHTTP determines if we should grab http requests
+	GrabHTTP bool
 
 	// LastGC keeps track of the last GC run
 	LastGC int64
@@ -93,6 +97,7 @@ func NewClient(token string) *Client {
 		GrabGR:         true,
 		GrabCgo:        true,
 		GrabFd:         true,
+		GrabHTTP:       true,
 		Verbose:        false,
 		Token:          token,
 		environment:    "production",
@@ -216,9 +221,17 @@ func (c *Client) capture() {
 		GoRoutines: grs,
 		Cgos:       cgos,
 		Fds:        fds,
-		HTTPs:      curlist.List(),
-		DBs:        Querylist.List(),
 		GC:         gcs,
+		DBs:        Querylist.List(),
+	}
+
+	if c.GrabHTTP {
+		ds.HTTPs = curlist.List()
+		ds.Rpms = rpms.List()
+
+		// reset http list && rpm
+		curlist.Reset()
+		ResetRPM()
 	}
 
 	if lastgc != c.LastGC {
@@ -227,9 +240,7 @@ func (c *Client) capture() {
 		ds.LastPause = strconv.FormatInt(gc.Pause[0].Nanoseconds(), 10)
 	}
 
-	// FIXME
-	// empty our https/dbs
-	curlist.Reset()
+	// reset dbs
 	Querylist.Reset()
 
 	go func() {

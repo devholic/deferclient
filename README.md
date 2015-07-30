@@ -5,13 +5,16 @@
 
 Defer Panic Client Lib.
 
- *  **Panic Handling** - Let deferclient catch and log any panic you get
+ *  **Panic Handling** - Let the client catch and log any panic you get
     to your own dashboard.
 
  *  **Error Handling** - Handle your errrors - but log them.
 
  *  **HTTP latency** - DeferClient can log the latencies of all your hard
     hit http requests.
+
+ *  **HTTP RPM** - Aggregate all the response codes for all your HTTP
+    requests over time.
 
  *  **Micro Services Tracing** - DeferClient can log queries to other services so you know exactly what service is slowing down the initial request!
 
@@ -24,6 +27,7 @@ Defer Panic Client Lib.
     - usage
     - gc runs && pause times
     - cgo
+    - file descriptors over time
 
     and more automatically in your own dashboard.
 
@@ -95,6 +99,8 @@ func main() {
 You can see that our slow request triggers our latency threshold and
 winds up in our dashboard while the panic is also caught and winds up in
 the dashboard.
+
+The default latency threshold is 500ms.
 
 The client works perfectly fine in non-HTTP applications:
 
@@ -188,6 +194,9 @@ We have additional database ORM wrappers:
 Got a micro-services/SOA architecture? Now you can trace your queries
 throughout and tie them back to the initial query that started it all!
 
+We set the HTTP header X-dpparentspanid in each request to trace
+requests throughout your architecture.
+
 Example
 
 User Facing Service
@@ -195,35 +204,41 @@ User Facing Service
 package main
 
 import (
-	"fmt"
-	"github.com/deferpanic/deferclient/deferstats"
-	"io/ioutil"
-	"net/http"
-	"net/url"
+  "fmt"
+  "github.com/deferpanic/deferclient/deferstats"
+  "io/ioutil"
+  "net/http"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
 
-	// just pass your spanId w/each request
-	resp, err := http.PostForm("http://127.0.0.1:7070/internal",
-		url.Values{"defer_parent_span_id": {deferstats.GetSpanIdString(w)}})
-	if err != nil {
-		fmt.Println(err)
-	}
+  // just pass your spanId w/each request
+  client := &http.Client{}
+  r, err := http.NewRequest("POST", "http://127.0.0.1:7070/internal", nil)
+  if err != nil {
+    fmt.Println(err)
+  }
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+  r.Header.Add("X-dpparentspanid", deferstats.GetSpanIdString(w))
 
-	fmt.Fprintf(w, string(body))
+  resp, err := client.Do(r)
+  if err != nil {
+    fmt.Println(err)
+  }
+
+  defer resp.Body.Close()
+  body, err := ioutil.ReadAll(resp.Body)
+
+  fmt.Fprintf(w, string(body))
 }
 
 func main() {
-	dfs := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
+  dfs := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
 
-	go dfs.CaptureStats()
+  go dfs.CaptureStats()
 
-	http.HandleFunc("/", dfs.HTTPHandlerFunc(handler))
-	http.ListenAndServe(":9090", nil)
+  http.HandleFunc("/", dfs.HTTPHandlerFunc(handler))
+  http.ListenAndServe(":9090", nil)
 }
 ```
 
@@ -243,7 +258,7 @@ type blah struct {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(510 * time.Millisecond)
 
 	stuff := blah{
 		Stuff: "some reply",
