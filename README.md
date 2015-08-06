@@ -47,7 +47,7 @@ Translations:
 
 Get an API KEY via your shell or signup manually [here](https://deferpanic.com/signup):
 ```
- curl https://api.deferpanic.com/v1.9/users/create \
+ curl https://api.deferpanic.com/v1.13/users/create \
         -X POST \
         -d "email=test@test.com" \
         -d "password=password"
@@ -79,7 +79,7 @@ func fastHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func slowHandler(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(6 * time.Second)
+	time.Sleep(2 * time.Second)
 	fmt.Fprintf(w, "this request is slow")
 }
 
@@ -144,7 +144,6 @@ func main() {
 
         time.Sleep(time.Second * 20)
 }
-➜ 
 ```
 
 ### Database Latency
@@ -186,8 +185,10 @@ func main() {
 
 We have additional database ORM wrappers:
 
-[gorp](https://github.com/deferpanic/dpgorp)
-[sqlx](https://github.com/deferpanic/dpsqlx)
+ *  [gorp](https://github.com/deferpanic/dpgorp)
+ *  [sqlx](https://github.com/deferpanic/dpsqlx)
+ *  [mgo](https://github.com/deferpanic/dpmgo)
+ *  [gorm](https://github.com/deferpanic/dpgorm)
 
 ### Micro-Services/SOA Tracing
 
@@ -365,7 +366,7 @@ func main() {
 ### Dependencies
 
 There are currently no dependencies so this should work out of the box
-for containers like docker && rocket.
+for container runtimes like docker && rocket.
 
 ### Documentation
 
