@@ -84,10 +84,34 @@ func (c *DeferPanicClient) Persist() {
 	}
 }
 
+// PersistRepanic ensures any panics will post to deferpanic website for
+// tracking, it also reissues the panic afterwards.
+// typically used in non http go-routines
+func (c *DeferPanicClient) PersistRepanic() {
+	if err := recover(); err != nil {
+		c.PrepSync(err, 0)
+		panic(err)
+	}
+}
+
 // Prep takes an error && a spanId
 // it cleans up the error/trace before calling ShipTrace
 // if spanId is zero it is ommited
 func (c *DeferPanicClient) Prep(err interface{}, spanId int64) {
+	c.prep(err, spanId, false)
+}
+
+// PrepSync takes an error && a spanId
+// it cleans up the error/trace before calling ShipTrace
+// waits for ShipTrace, in a go routine, to complete before continuing
+// if spanId is zero it is ommited
+func (c *DeferPanicClient) PrepSync(err interface{}, spanId int64) {
+	c.prep(err, spanId, true)
+}
+
+// prep is an internal function that can be called to synchronize after
+// shipping the the trace to ensure completion.
+func (c *DeferPanicClient) prep(err interface{}, spanId int64, syncShipTrace bool) {
 	errorMsg := fmt.Sprintf("%q", err)
 
 	errorMsg = strings.Replace(errorMsg, "\"", "", -1)
@@ -99,7 +123,16 @@ func (c *DeferPanicClient) Prep(err interface{}, spanId int64) {
 
 	body := backTrace()
 
-	go c.ShipTrace(body, errorMsg, spanId)
+	if syncShipTrace {
+		done := make(chan bool)
+		go func() {
+			c.ShipTrace(body, errorMsg, spanId)
+			done <- true
+		}()
+		<-done
+	} else {
+		go c.ShipTrace(body, errorMsg, spanId)
+	}
 }
 
 // backtrace grabs the backtrace

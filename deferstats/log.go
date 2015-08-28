@@ -44,3 +44,13 @@ func (c *Client) Persist() {
 		c.BaseClient.Prep(err, 0)
 	}
 }
+
+// PersistRepanic ensures any panics will post to deferpanic website for
+// tracking, it also reissues the panic afterwards.
+// typically used in non http go-routines
+func (c *Client) PersistRepanic() {
+	if err := recover(); err != nil {
+		c.BaseClient.PrepSync(err, 0)
+		panic(err)
+	}
+}
