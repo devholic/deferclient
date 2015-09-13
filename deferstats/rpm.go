@@ -29,8 +29,12 @@ type Rpm struct {
 }
 
 // ResetRPM clobbers old rpmset
-func ResetRPM() {
-	rpms = rpmSet{}
+// rename me in next bump
+func (r *rpmSet) ResetRPM() {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	r = &rpmSet{}
 }
 
 func (r *rpmSet) List() Rpm {

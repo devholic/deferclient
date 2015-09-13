@@ -5,11 +5,16 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"runtime"
 	"strconv"
 	"testing"
 )
 
 func TestClient(t *testing.T) {
+
+	// on 1.5 this doesn't happen immediately like it does on 1.4 so
+	// we force so we know there are values here
+	runtime.GC()
 
 	dps := NewClient("token")
 
