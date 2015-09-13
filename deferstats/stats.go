@@ -231,7 +231,7 @@ func (c *Client) capture() {
 
 		// reset http list && rpm
 		curlist.Reset()
-		ResetRPM()
+		rpms.ResetRPM()
 	}
 
 	if lastgc != c.LastGC {
