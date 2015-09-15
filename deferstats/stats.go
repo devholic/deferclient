@@ -31,7 +31,7 @@ type DeferStats struct {
 	Fds        string      `json:"Fds"`
 	HTTPs      []DeferHTTP `json:"HTTPs,omitempty"`
 	DBs        []DeferDB   `json:"DBs,omitempty"`
-	Rpms       Rpm         `json:RPMs,omitempty"`
+	Rpms       Rpm         `json:"RPMs,omitempty"`
 }
 
 // Client is the client for making metrics requests to the
