@@ -34,7 +34,7 @@ func (r *rpmSet) ResetRPM() {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	r = &rpmSet{}
+	r.rpm = Rpm{}
 }
 
 func (r *rpmSet) List() Rpm {

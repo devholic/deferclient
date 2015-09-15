@@ -92,3 +92,20 @@ func TestRPM(t *testing.T) {
 	}
 
 }
+
+func TestClearRPM(t *testing.T) {
+	rpms.ResetRPM()
+
+	rpms.Inc(200)
+
+	if rpms.rpm.StatusOk != 1 {
+		t.Errorf("not inc'ing StatusOk %v", rpms.rpm.StatusOk)
+	}
+
+	rpms.ResetRPM()
+
+	if rpms.rpm.StatusOk != 0 {
+		t.Errorf("not clearing StatusOk %v", rpms.rpm.StatusOk)
+	}
+
+}
