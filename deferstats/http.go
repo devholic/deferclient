@@ -47,7 +47,7 @@ type tracingResponseWriter interface {
 }
 
 // responseTracer implements a responsewriter with spanId/parentSpanId
-type responseTracer struct {
+type ResponseTracer struct {
 	w            http.ResponseWriter
 	status       int
 	size         int
@@ -123,20 +123,20 @@ func GetSpanIdString(r http.ResponseWriter) string {
 
 // GetSpanId returns the span id for this http request
 func GetSpanId(r http.ResponseWriter) int64 {
-	mPtr := (r).(*responseTracer)
+	mPtr := (r).(*ResponseTracer)
 	return mPtr.SpanId
 }
 
-func (l *responseTracer) newId() int64 {
+func (l *ResponseTracer) newId() int64 {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return r.Int63()
 }
 
-func (l *responseTracer) Header() http.Header {
+func (l *ResponseTracer) Header() http.Header {
 	return l.w.Header()
 }
 
-func (l *responseTracer) Write(b []byte) (int, error) {
+func (l *ResponseTracer) Write(b []byte) (int, error) {
 	if l.status == 0 {
 		// The status will be StatusOK if WriteHeader has not been
 		// called yet
@@ -148,17 +148,17 @@ func (l *responseTracer) Write(b []byte) (int, error) {
 }
 
 // WriteHeader sets the header
-func (l *responseTracer) WriteHeader(s int) {
+func (l *ResponseTracer) WriteHeader(s int) {
 	l.w.WriteHeader(s)
 	l.status = s
 }
 
 // Status returns the HTTP status code
-func (l *responseTracer) Status() int {
+func (l *ResponseTracer) Status() int {
 	return l.status
 }
 
-func (l *responseTracer) Size() int {
+func (l *ResponseTracer) Size() int {
 	return l.size
 }
 
@@ -174,35 +174,12 @@ func (c *Client) HTTPHandlerFunc(f http.HandlerFunc) http.HandlerFunc {
 // this currently happens in a global list :( - TBFS
 func (c *Client) HTTPHandler(f http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		startTime := time.Now()
-
-		var tracer *responseTracer
-
-		tracer = &responseTracer{
-			w: w,
-		}
-
-		tracer.SpanId = tracer.newId()
-
-		// add headers
-		headers := make(map[string]string, len(r.Header))
-
-		for k, v := range r.Header {
-			headers[k] = strings.Join(v, ",")
-
-			// grab SOA tracing header if present
-			if k == "X-Dpparentspanid" {
-				tracer.ParentSpanId, _ = strconv.ParseInt(v[0], 10, 64)
-			}
-		}
+		startTime, tracer, headers := c.BeforeRequest(w, r)
 
 		defer func() {
 			if err := recover(); err != nil {
 				c.BaseClient.Prep(err, tracer.SpanId)
-
-				appendHTTP(startTime, r.URL.Path, r.Method, 500, tracer.SpanId, tracer.ParentSpanId,
-					true, headers)
+				c.AfterRequest(startTime, tracer, r, headers, 500, true)
 
 				errorMsg := fmt.Sprintf("%v", err)
 				WritePanicResponse(w, r, errorMsg)
@@ -211,8 +188,35 @@ func (c *Client) HTTPHandler(f http.Handler) http.Handler {
 
 		f.ServeHTTP(tracer, r)
 
-		appendHTTP(startTime, r.URL.Path, r.Method, tracer.Status(), tracer.SpanId,
-			tracer.ParentSpanId, false, headers)
-
+		c.AfterRequest(startTime, tracer, r, headers, tracer.Status(), false)
 	})
+}
+
+func (c *Client) BeforeRequest(w http.ResponseWriter, r *http.Request) (
+	startTime time.Time, tracer *ResponseTracer, headers map[string]string) {
+	startTime = time.Now()
+
+	tracer = &ResponseTracer{
+		w: w,
+	}
+	tracer.SpanId = tracer.newId()
+
+	// add headers
+	headers = make(map[string]string, len(r.Header))
+	for k, v := range r.Header {
+		headers[k] = strings.Join(v, ",")
+
+		// grab SOA tracing header if present
+		if k == "X-Dpparentspanid" {
+			tracer.ParentSpanId, _ = strconv.ParseInt(v[0], 10, 64)
+		}
+	}
+
+	return startTime, tracer, headers
+}
+
+func (c *Client) AfterRequest(startTime time.Time, tracer *ResponseTracer, r *http.Request,
+	headers map[string]string, status_code int, isproblem bool) {
+	appendHTTP(startTime, r.URL.Path, r.Method, status_code, tracer.SpanId,
+		tracer.ParentSpanId, isproblem, headers)
 }
