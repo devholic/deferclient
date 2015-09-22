@@ -2,8 +2,10 @@ package deferstats
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,13 +15,129 @@ import (
 var (
 	// curlist holds an array of DeferHTTPs (uri && latency)
 	curlist = &deferHTTPList{}
-
-	// LatencyThreshold is the threshold in milliseconds that if
-	// exceeded a request will be added to the curlist
-	LatencyThreshold = 500
 )
 
-// DeferHTTP holds the path uri and latency for each request
+// HTTPPercentile is a single instance of the set of a http query percentiles
+type HTTPPercentile struct {
+	Sample DeferHTTP `json:"Sample"`
+	P50    float64   `json:"P50"`
+	P75    float64   `json:"P75"`
+	P90    float64   `json:"P90"`
+	P95    float64   `json:"P95"`
+	P99    float64   `json:"P99"`
+	Min    int64     `json:"Min"`
+	Max    int64     `json:"Max"`
+	Mean   float64   `json:"Mean"`
+	StdDev float64   `json:"StdDev"`
+	Count  int64     `json:"Count"`
+}
+
+type DeferHTTPs []DeferHTTP
+
+func (slice DeferHTTPs) Len() int {
+	return len(slice)
+}
+
+func (slice DeferHTTPs) Less(i, j int) bool {
+	return slice[i].Time < slice[j].Time
+}
+
+func (slice DeferHTTPs) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+// getHTTPPercentiles returns a list of HTTPPercentiles from DeferHTTP
+func getHTTPPercentiles(https []DeferHTTP) []HTTPPercentile {
+	// build a map of paths to a list of latencies
+	list := make(map[string]DeferHTTPs)
+
+	for i := 0; i < len(https); i++ {
+		p := https[i].Path
+
+		if _, ok := list[p]; ok {
+			list[p] = append(list[p], https[i])
+		} else {
+			s := DeferHTTPs{https[i]}
+
+			list[p] = s
+		}
+	}
+
+	var percentiles []HTTPPercentile
+
+	// sort the list
+	for _, v := range list {
+		// sum
+		sum := 0
+		for i := 0; i < len(v); i++ {
+			sum += v[i].Time
+		}
+
+		l := v.Len()
+		fl := float64(l)
+
+		// sort
+		sort.Sort(v)
+
+		// debug infos
+		fmt.Println("\nSorted")
+		for i, c := range v {
+			fmt.Println(i, c.Time)
+		}
+
+		// fixme
+		p := HTTPPercentile{}
+
+		e := (fl * float64(0.50))
+		p.P50 = float64(v[int(e)].Time)
+
+		e = (fl * float64(0.75))
+		p.P75 = float64(v[int(e)].Time)
+
+		e = (fl * float64(0.90))
+		p.P90 = float64(v[int(e)].Time)
+
+		e = (fl * float64(0.95))
+		p.P95 = float64(v[int(e)].Time)
+
+		e = (fl * float64(0.99))
+		p.P99 = float64(v[int(e)].Time)
+
+		p.Min = int64(v[0].Time)
+
+		p.Max = int64(v[l-1].Time)
+
+		p.Sample = v[l-1]
+
+		p.Mean = float64(sum / l)
+
+		// fixme
+		p.StdDev = stdDev(v, p.Mean)
+		fmt.Printf("found stddev of %v\n", p.StdDev)
+
+		percentiles = append(percentiles, p)
+
+	}
+
+	return percentiles
+}
+
+// stdDev is the square root of variance
+func stdDev(vals DeferHTTPs, mean float64) float64 {
+	// square root of variance
+	return math.Sqrt(variance(vals, mean))
+}
+
+func variance(vals DeferHTTPs, mean float64) float64 {
+	var tsum float64 = 0
+	for i := 0; i < len(vals); i++ {
+		b := (float64(vals[i].Time) - mean)
+		tsum += (b * b)
+	}
+	return tsum / float64(len(vals))
+}
+
+// DeferHTTP holds a single instance of a http query
 type DeferHTTP struct {
 	Path         string            `json:"Path"`
 	Method       string            `json:"Method"`
@@ -96,23 +214,19 @@ func appendHTTP(startTime time.Time, path string, method string, status_code int
 
 	rpms.Inc(status_code)
 
-	// only log if t over LatencyThreshold or if a panic/error occurred
-	if (t > LatencyThreshold) || isProblem {
-
-		dh := DeferHTTP{
-			Path:         path,
-			Method:       method,
-			Time:         t,
-			StatusCode:   status_code,
-			SpanId:       span_id,
-			ParentSpanId: parent_span_id,
-			IsProblem:    isProblem,
-			Headers:      headers,
-		}
-
-		curlist.Add(dh)
-
+	dh := DeferHTTP{
+		Path:         path,
+		Method:       method,
+		Time:         t,
+		StatusCode:   status_code,
+		SpanId:       span_id,
+		ParentSpanId: parent_span_id,
+		IsProblem:    isProblem,
+		Headers:      headers,
 	}
+
+	curlist.Add(dh)
+
 }
 
 // GetSpanIdString is a conveinence method to get the string equivalent
