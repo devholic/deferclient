@@ -373,3 +373,8 @@ for container runtimes like docker && rocket.
 See https://godoc.org/github.com/deferpanic/deferclient for documentation.
 
 Defer Panic Client
+
+### FAQ
+
+Q: Does this support websockets yet?
+A: No but we are open to discussing what this would look like.
