@@ -194,10 +194,9 @@ func TestHTTPHeaderHandler(t *testing.T) {
 }
 
 func TestSOA(t *testing.T) {
+	curlist.Reset()
 
 	dps := NewClient("token")
-
-	LatencyThreshold = -1
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", dps.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -257,10 +256,9 @@ func TestSOA(t *testing.T) {
 }
 
 func TestSOAHandler(t *testing.T) {
+	curlist.Reset()
 
 	dps := NewClient("token")
-
-	LatencyThreshold = -1
 
 	mux := http.NewServeMux()
 
@@ -316,6 +314,62 @@ func TestSOAHandler(t *testing.T) {
 
 	if curlist.list[0].ParentSpanId != 8103318854963911860 {
 		t.Error("not tracking our parent_span_id")
+	}
+
+}
+
+func TestPercentiles(t *testing.T) {
+	var list DeferHTTPs
+
+	for i := 1; i < 4; i++ {
+		dh := DeferHTTP{
+			Path: "/blah",
+			Time: i * 100,
+		}
+
+		list = append(list, dh)
+	}
+
+	percentiles := getHTTPPercentiles(list)
+
+	if percentiles[0].P50 != 200 {
+		t.Error("incorrect count")
+	}
+
+	if percentiles[0].P75 != 300 {
+		t.Error("incorrect count")
+	}
+
+	if percentiles[0].P90 != 300 {
+		t.Error("incorrect count")
+	}
+
+	if percentiles[0].P95 != 300 {
+		t.Error("incorrect count")
+	}
+
+	if percentiles[0].P99 != 300 {
+		t.Error("incorrect count")
+	}
+
+	if percentiles[0].Min != 100 {
+		t.Error("incorrect Min")
+	}
+
+	if percentiles[0].Max != 300 {
+		t.Error("incorrect Max")
+	}
+
+	if percentiles[0].Mean != 200 {
+		t.Error("incorrect Mean")
+	}
+
+	if percentiles[0].StdDev != 81.64965809277261 {
+		t.Error("incorrect standard deviation")
+	}
+
+	if percentiles[0].Count != 3 {
+		t.Error("incorrect count")
 	}
 
 }

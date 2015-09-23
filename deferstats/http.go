@@ -79,13 +79,6 @@ func getHTTPPercentiles(https []DeferHTTP) []HTTPPercentile {
 		// sort
 		sort.Sort(v)
 
-		// debug infos
-		fmt.Println("\nSorted")
-		for i, c := range v {
-			fmt.Println(i, c.Time)
-		}
-
-		// fixme
 		p := HTTPPercentile{}
 
 		e := (fl * float64(0.50))
@@ -111,9 +104,9 @@ func getHTTPPercentiles(https []DeferHTTP) []HTTPPercentile {
 
 		p.Mean = float64(sum / l)
 
-		// fixme
+		p.Count = int64(l)
+
 		p.StdDev = stdDev(v, p.Mean)
-		fmt.Printf("found stddev of %v\n", p.StdDev)
 
 		percentiles = append(percentiles, p)
 
