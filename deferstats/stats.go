@@ -22,16 +22,16 @@ var (
 
 // DeferStats captures {mem, gc, goroutines and http calls}
 type DeferStats struct {
-	Mem        string      `json:"Mem"`
-	GC         string      `json:"GC"`
-	LastGC     string      `json:"LastGC"`
-	LastPause  string      `json:"LastPause"`
-	GoRoutines string      `json:"GoRoutines"`
-	Cgos       string      `json:"Cgos"`
-	Fds        string      `json:"Fds"`
-	HTTPs      []DeferHTTP `json:"HTTPs,omitempty"`
-	DBs        []DeferDB   `json:"DBs,omitempty"`
-	Rpms       Rpm         `json:RPMs,omitempty"`
+	Mem        string           `json:"Mem"`
+	GC         string           `json:"GC"`
+	LastGC     string           `json:"LastGC"`
+	LastPause  string           `json:"LastPause"`
+	GoRoutines string           `json:"GoRoutines"`
+	Cgos       string           `json:"Cgos"`
+	Fds        string           `json:"Fds"`
+	HTTPs      []HTTPPercentile `json:"HTTPs,omitempty"`
+	DBs        []DeferDB        `json:"DBs,omitempty"`
+	Rpms       Rpm              `json:"RPMs,omitempty"`
 }
 
 // Client is the client for making metrics requests to the
@@ -226,7 +226,8 @@ func (c *Client) capture() {
 	}
 
 	if c.GrabHTTP {
-		ds.HTTPs = curlist.List()
+		dhs := curlist.List()
+		ds.HTTPs = getHTTPPercentiles(dhs)
 		ds.Rpms = rpms.List()
 
 		// reset http list && rpm

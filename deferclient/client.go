@@ -14,7 +14,7 @@ import (
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.13"
+	ApiVersion = "v1.14"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
