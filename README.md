@@ -215,14 +215,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
   // just pass your spanId w/each request
   client := &http.Client{}
-  r, err := http.NewRequest("POST", "http://127.0.0.1:7070/internal", nil)
+  request, err := http.NewRequest("POST", "http://127.0.0.1:7070/internal", nil)
   if err != nil {
     fmt.Println(err)
   }
 
-  r.Header.Add("X-dpparentspanid", deferstats.GetSpanIdString(w))
+  request.Header.Add("X-dpparentspanid", deferstats.GetSpanIdString(w))
 
-  resp, err := client.Do(r)
+  resp, err := client.Do(request)
   if err != nil {
     fmt.Println(err)
   }
