@@ -2,13 +2,14 @@
 package deferclient
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"runtime/trace"
@@ -239,34 +240,39 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 
 // MakeTrace POST a Trace html to the deferpanic website
 func (c *DeferPanicClient) MakeTrace() {
-	log.Println("trace started")
+	var buf []byte
+	buffer := bytes.NewBuffer(buf)
 
-	//	buf := new([]byte)
-	f, err := os.Create("/tmp/trace")
+	log.Println("trace started")
+	err := trace.Start(buffer)
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	defer f.Close()
-	w := bufio.NewWriter(f)
-	go func() {
-		//		err := trace.Start(bytes.NewBuffer(*buf))
-		err := trace.Start(w)
-		if err != nil {
-			log.Println(err)
-		}
-	}()
 
 	select {
 	case <-time.After(30 * time.Second):
 		trace.Stop()
-		w.Flush()
 		log.Println("trace finished")
 
 		t := NewTrace()
-		//		t.HTMLBody = string(*buf)
+		t.Out = make([]byte, len(buffer.Bytes()))
+		copy(t.Out, buffer.Bytes())
+		pkgpath, err := filepath.Abs(os.Args[0])
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		t.Pkg, err = ioutil.ReadFile(pkgpath)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
 		b, err := json.Marshal(t)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 		c.Postit(b, "http://localhost:8080/v1.15/uploads/trace/create")
 	}

@@ -1,14 +1,9 @@
 package deferclient
 
-// Trace contains information about this client's trace
+// Trace contains information about this client's trace and its producing package
 type Trace struct {
-	HTMLBody string `json:"HtmlBody"`
-}
-
-// SetHtmlBody sets a html body for this trace
-func (t *Trace) SetHTMLBody() {
-
-	t.HTMLBody = "<html><body>Empty trace</body></html>"
+	Out []byte `json:"Out"`
+	Pkg []byte `json:"Pkg"`
 }
 
 // NewTrace instantitates and returns a new trace
@@ -16,8 +11,6 @@ func (t *Trace) SetHTMLBody() {
 func NewTrace() *Trace {
 
 	t := &Trace{}
-
-	t.SetHTMLBody()
 
 	return t
 }
