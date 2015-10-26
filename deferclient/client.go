@@ -57,10 +57,9 @@ type DeferPanicClient struct {
 	Environment string
 	AppGroup    string
 
-	Agent        *Agent
-	NoPost       bool
-	PrintPanics  bool
-	CollectTrace chan bool
+	Agent       *Agent
+	NoPost      bool
+	PrintPanics bool
 }
 
 // struct that holds expected json body for POSTing to deferpanic API
@@ -75,12 +74,11 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 	a := NewAgent()
 
 	dc := &DeferPanicClient{
-		Token:        token,
-		UserAgent:    "deferclient " + ApiVersion,
-		Agent:        a,
-		PrintPanics:  false,
-		NoPost:       false,
-		CollectTrace: make(chan bool),
+		Token:       token,
+		UserAgent:   "deferclient " + ApiVersion,
+		Agent:       a,
+		PrintPanics: false,
+		NoPost:      false,
 	}
 
 	return dc
@@ -246,8 +244,6 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 
 // MakeTrace POST a Trace html to the deferpanic website
 func (c *DeferPanicClient) MakeTrace() {
-	<-c.CollectTrace
-
 	var buf []byte
 	buffer := bytes.NewBuffer(buf)
 

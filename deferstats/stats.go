@@ -153,6 +153,9 @@ func (c *Client) CaptureStats() {
 		// Capture the stats every statsFrequency seconds
 		go c.capture()
 
+		// Capture the trace if requested by customer
+		go c.BaseClient.MakeTrace()
+
 		if c.Verbose {
 			log.Printf("Captured at:%v\n", tc)
 		}
