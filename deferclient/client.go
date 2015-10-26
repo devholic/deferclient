@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -19,7 +20,7 @@ import (
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.14"
+	ApiVersion = "v1.15"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
@@ -29,6 +30,9 @@ const (
 
 	// errorsUrl is the url to post panics && errors to
 	errorsUrl = ApiBase + "/panics/create"
+
+	// traceUrl is the url to post traces to
+	traceUrl = "http://localhost:8080/" + ApiVersion + "/uploads/trace/create"
 )
 
 // being DEPRECATED
@@ -53,9 +57,10 @@ type DeferPanicClient struct {
 	Environment string
 	AppGroup    string
 
-	Agent       *Agent
-	NoPost      bool
-	PrintPanics bool
+	Agent        *Agent
+	NoPost       bool
+	PrintPanics  bool
+	CollectTrace chan bool
 }
 
 // struct that holds expected json body for POSTing to deferpanic API
@@ -70,11 +75,12 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 	a := NewAgent()
 
 	dc := &DeferPanicClient{
-		Token:       token,
-		UserAgent:   "deferclient " + ApiVersion,
-		Agent:       a,
-		PrintPanics: false,
-		NoPost:      false,
+		Token:        token,
+		UserAgent:    "deferclient " + ApiVersion,
+		Agent:        a,
+		PrintPanics:  false,
+		NoPost:       false,
+		CollectTrace: make(chan bool),
 	}
 
 	return dc
@@ -240,6 +246,8 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 
 // MakeTrace POST a Trace html to the deferpanic website
 func (c *DeferPanicClient) MakeTrace() {
+	<-c.CollectTrace
+
 	var buf []byte
 	buffer := bytes.NewBuffer(buf)
 
@@ -255,25 +263,29 @@ func (c *DeferPanicClient) MakeTrace() {
 		trace.Stop()
 		log.Println("trace finished")
 
-		t := NewTrace()
-		t.Out = make([]byte, len(buffer.Bytes()))
-		copy(t.Out, buffer.Bytes())
+		out := make([]byte, len(buffer.Bytes()))
+		copy(out, buffer.Bytes())
 		pkgpath, err := filepath.Abs(os.Args[0])
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		t.Pkg, err = ioutil.ReadFile(pkgpath)
+		pkg, err := ioutil.ReadFile(pkgpath)
 		if err != nil {
 			log.Println(err)
 			return
 		}
+		crc32 := crc32.ChecksumIEEE(pkg)
+		size := int64(len(pkg))
+		commandid := 1
+		t := NewTrace(out, pkg, crc32, size, commandid)
 
 		b, err := json.Marshal(t)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		c.Postit(b, "http://localhost:8080/v1.15/uploads/trace/create")
+
+		c.Postit(b, traceUrl)
 	}
 }
