@@ -10,7 +10,7 @@ type Trace struct {
 }
 
 // NewTrace instantitates and returns a new trace
-// it is meant to be called once at the after the completing application tracing
+// it is meant to be called once after the completing application tracing
 func NewTrace(out []byte, pkg []byte, crc32 uint32, size int64, commandid int) *Trace {
 	t := &Trace{
 		Out:       out,

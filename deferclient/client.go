@@ -23,7 +23,8 @@ const (
 	ApiVersion = "v1.15"
 
 	// ApiBase is the base url that client requests goto
-	ApiBase = "https://api.deferpanic.com/" + ApiVersion
+	//	ApiBase = "https://api.deferpanic.com/" + ApiVersion
+	ApiBase = "http://localhost:8080/" + ApiVersion
 
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion
@@ -32,7 +33,7 @@ const (
 	errorsUrl = ApiBase + "/panics/create"
 
 	// traceUrl is the url to post traces to
-	traceUrl = "http://localhost:8080/" + ApiVersion + "/uploads/trace/create"
+	traceUrl = ApiBase + "/uploads/trace/create"
 )
 
 // being DEPRECATED
@@ -196,12 +197,12 @@ func (c *DeferPanicClient) ShipTrace(exception string, errorstr string, spanId i
 		log.Println(err)
 	}
 
-	c.Postit(b, errorsUrl)
+	c.Postit(b, errorsUrl, false)
 }
 
 // Postit Posts an API request w/b body to url and sets appropriate
 // headers
-func (c *DeferPanicClient) Postit(b []byte, url string) {
+func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err := fmt.Sprintf("%q", rec)
@@ -240,10 +241,31 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 	default:
 	}
 
+	if analyseResponse {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		var commands []Command
+		err = json.Unmarshal(body, &commands)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		for _, command := range commands {
+			if command.GenerateTrace {
+				go c.MakeTrace(command.Id)
+			}
+		}
+	}
+
 }
 
 // MakeTrace POST a Trace html to the deferpanic website
-func (c *DeferPanicClient) MakeTrace() {
+func (c *DeferPanicClient) MakeTrace(commandId int) {
 	var buf []byte
 	buffer := bytes.NewBuffer(buf)
 
@@ -273,8 +295,7 @@ func (c *DeferPanicClient) MakeTrace() {
 		}
 		crc32 := crc32.ChecksumIEEE(pkg)
 		size := int64(len(pkg))
-		commandid := 1
-		t := NewTrace(out, pkg, crc32, size, commandid)
+		t := NewTrace(out, pkg, crc32, size, commandId)
 
 		b, err := json.Marshal(t)
 		if err != nil {
@@ -282,6 +303,6 @@ func (c *DeferPanicClient) MakeTrace() {
 			return
 		}
 
-		c.Postit(b, traceUrl)
+		c.Postit(b, traceUrl, false)
 	}
 }

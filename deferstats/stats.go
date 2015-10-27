@@ -153,9 +153,6 @@ func (c *Client) CaptureStats() {
 		// Capture the stats every statsFrequency seconds
 		go c.capture()
 
-		// Capture the trace if requested by customer
-		go c.BaseClient.MakeTrace()
-
 		if c.Verbose {
 			log.Printf("Captured at:%v\n", tc)
 		}
@@ -175,7 +172,7 @@ func (c *Client) updateAgent() {
 
 	agentUrl := deferclient.ApiBase + "/agent_ids/create"
 
-	c.BaseClient.Postit(b, agentUrl)
+	c.BaseClient.Postit(b, agentUrl, false)
 }
 
 // capture does a one time collection of DeferStats
@@ -260,6 +257,6 @@ func (c *Client) capture() {
 			log.Println(err)
 		}
 
-		c.BaseClient.Postit(b, c.statsUrl)
+		c.BaseClient.Postit(b, c.statsUrl, true)
 	}()
 }
