@@ -2,10 +2,10 @@ package deferclient
 
 // Command contains information about this client's command, that has to be executed
 type Command struct {
-	Id            int  `json:"id"`
-	GenerateTrace bool `json"generateTrace"`
-	Requested     bool `json:"requested"`
-	Executed      bool `json:"executed"`
+	Id            int  `json:"Id"`
+	GenerateTrace bool `json:"GenerateTrace"`
+	Requested     bool `json:"Requested"`
+	Executed      bool `json:"Executed"`
 }
 
 // NewCommand instantitates and returns a new command

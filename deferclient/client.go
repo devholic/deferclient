@@ -15,6 +15,7 @@ import (
 	"runtime/debug"
 	"runtime/trace"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -61,6 +62,9 @@ type DeferPanicClient struct {
 	Agent       *Agent
 	NoPost      bool
 	PrintPanics bool
+
+	RunningCommands map[int]bool
+	sync.Mutex
 }
 
 // struct that holds expected json body for POSTing to deferpanic API
@@ -75,11 +79,12 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 	a := NewAgent()
 
 	dc := &DeferPanicClient{
-		Token:       token,
-		UserAgent:   "deferclient " + ApiVersion,
-		Agent:       a,
-		PrintPanics: false,
-		NoPost:      false,
+		Token:           token,
+		UserAgent:       "deferclient " + ApiVersion,
+		Agent:           a,
+		PrintPanics:     false,
+		NoPost:          false,
+		RunningCommands: make(map[int]bool),
 	}
 
 	return dc
@@ -256,8 +261,13 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 		}
 
 		for _, command := range commands {
-			if command.GenerateTrace {
-				go c.MakeTrace(command.Id)
+			c.Lock()
+			running := c.RunningCommands[command.Id]
+			c.Unlock()
+			if !running {
+				if command.GenerateTrace {
+					go c.MakeTrace(command.Id)
+				}
 			}
 		}
 	}
@@ -268,6 +278,15 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 func (c *DeferPanicClient) MakeTrace(commandId int) {
 	var buf []byte
 	buffer := bytes.NewBuffer(buf)
+
+	c.Lock()
+	c.RunningCommands[commandId] = true
+	c.Unlock()
+	defer func() {
+		c.Lock()
+		delete(c.RunningCommands, commandId)
+		c.Unlock()
+	}()
 
 	log.Println("trace started")
 	err := trace.Start(buffer)
