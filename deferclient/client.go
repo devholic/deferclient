@@ -69,6 +69,11 @@ type DeferJSON struct {
 	SpanId    int64  `json:"SpanId,omitempty"`
 }
 
+type Response struct {
+	Agent    Agent     `json:"AgentID"`
+	Commands []Command `json:"Commands"`
+}
+
 // NewDeferPanicClient instantiates and returns a new deferpanic client
 func NewDeferPanicClient(token string) *DeferPanicClient {
 	a := NewAgent()
@@ -248,20 +253,20 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 			return
 		}
 
-		var commands []Command
-		err = json.Unmarshal(body, &commands)
+		var response Response
+		err = json.Unmarshal(body, &response)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		for _, command := range commands {
+		for _, command := range response.Commands {
 			c.Lock()
 			running := c.RunningCommands[command.Id]
 			c.Unlock()
 			if !running {
 				if command.GenerateTrace {
-					go c.MakeTrace(command.Id)
+					go c.MakeTrace(command.Id, &response.Agent)
 				}
 			}
 		}

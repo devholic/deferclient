@@ -4,19 +4,15 @@ package deferclient
 type Trace struct {
 	Out       []byte `json:"Out"`
 	Pkg       []byte `json:"Pkg"`
-	CRC32     uint32 `json:"CRC32"`
-	Size      int64  `json:"Size"`
 	CommandId int    `json:"CommandId"`
 }
 
 // NewTrace instantitates and returns a new trace
 // it is meant to be called once after the completing application tracing
-func NewTrace(out []byte, pkg []byte, crc32 uint32, size int64, commandid int) *Trace {
+func NewTrace(out []byte, pkg []byte, commandid int) *Trace {
 	t := &Trace{
 		Out:       out,
 		Pkg:       pkg,
-		CRC32:     crc32,
-		Size:      size,
 		CommandId: commandid,
 	}
 

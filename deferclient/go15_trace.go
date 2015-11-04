@@ -15,7 +15,7 @@ import (
 )
 
 // MakeTrace POST a Trace html to the deferpanic website
-func (c *DeferPanicClient) MakeTrace(commandId int) {
+func (c *DeferPanicClient) MakeTrace(commandId int, agent *Agent) {
 	var buf []byte
 	buffer := bytes.NewBuffer(buf)
 
@@ -54,7 +54,10 @@ func (c *DeferPanicClient) MakeTrace(commandId int) {
 		}
 		crc32 := crc32.ChecksumIEEE(pkg)
 		size := int64(len(pkg))
-		t := NewTrace(out, pkg, crc32, size, commandId)
+		if agent.CRC32 == crc32 && agent.Size == size {
+			pkg = []byte{}
+		}
+		t := NewTrace(out, pkg, commandId)
 
 		b, err := json.Marshal(t)
 		if err != nil {
