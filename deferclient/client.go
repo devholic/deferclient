@@ -71,7 +71,7 @@ type DeferJSON struct {
 
 type Response struct {
 	Agent    Agent     `json:"AgentID"`
-	Commands []Command `json:"Commands"`
+	Commands []Command `json:"Commands,omitempty"`
 }
 
 // NewDeferPanicClient instantiates and returns a new deferpanic client

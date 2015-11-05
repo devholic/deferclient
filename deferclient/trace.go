@@ -2,8 +2,8 @@ package deferclient
 
 // Trace contains information about this client's trace and its producing package
 type Trace struct {
-	Out       []byte `json:"Out"`
-	Pkg       []byte `json:"Pkg"`
+	Out       []byte `json:"Out,omitempty"`
+	Pkg       []byte `json:"Pkg,omitempty"`
 	CommandId int    `json:"CommandId"`
 }
 
