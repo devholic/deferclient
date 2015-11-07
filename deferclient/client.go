@@ -20,7 +20,7 @@ const (
 
 	// ApiBase is the base url that client requests goto
 	//	ApiBase = "https://api.deferpanic.com/" + ApiVersion
-	ApiBase = "http://localhost:8080/" + ApiVersion
+	ApiBase = "https://staging.deferpanic.com/" + ApiVersion
 
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion
@@ -244,6 +244,7 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 	case 503:
 		log.Println("service not available")
 	default:
+		log.Printf("response code %v", resp.StatusCode)
 	}
 
 	if analyseResponse {
