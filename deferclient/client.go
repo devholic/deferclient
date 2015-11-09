@@ -19,8 +19,9 @@ const (
 	ApiVersion = "v1.15"
 
 	// ApiBase is the base url that client requests goto
-	//	ApiBase = "https://api.deferpanic.com/" + ApiVersion
+	// ApiBase = "https://api.deferpanic.com/" + ApiVersion
 	ApiBase = "https://staging.deferpanic.com/" + ApiVersion
+	// ApiBase = "http://localhost:8080/" + ApiVersion
 
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion
@@ -69,6 +70,7 @@ type DeferJSON struct {
 	SpanId    int64  `json:"SpanId,omitempty"`
 }
 
+// struct that holds list of commands to be executed and agent state at server
 type Response struct {
 	Agent    Agent     `json:"AgentID"`
 	Commands []Command `json:"Commands,omitempty"`

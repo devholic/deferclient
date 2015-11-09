@@ -2,6 +2,11 @@
 
 package deferclient
 
+import (
+	"encoding/json"
+	"log"
+)
+
 // MakeTrace POST a Trace html to the deferpanic website
 func (c *DeferPanicClient) MakeTrace(commandId int, agent *Agent) {
 	c.Lock()
@@ -13,7 +18,7 @@ func (c *DeferPanicClient) MakeTrace(commandId int, agent *Agent) {
 		c.Unlock()
 	}()
 
-	t := NewTrace([]byte{}, []byte{}, commandId)
+	t := NewTrace([]byte{}, []byte{}, commandId, true)
 
 	b, err := json.Marshal(t)
 	if err != nil {

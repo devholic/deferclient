@@ -57,7 +57,7 @@ func (c *DeferPanicClient) MakeTrace(commandId int, agent *Agent) {
 		if agent.CRC32 == crc32 && agent.Size == size {
 			pkg = []byte{}
 		}
-		t := NewTrace(out, pkg, commandId)
+		t := NewTrace(out, pkg, commandId, false)
 
 		b, err := json.Marshal(t)
 		if err != nil {
