@@ -244,7 +244,6 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 	case 503:
 		log.Println("service not available")
 	default:
-		log.Printf("response code %v", resp.StatusCode)
 	}
 
 	if analyseResponse {
