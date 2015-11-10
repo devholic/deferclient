@@ -20,8 +20,6 @@ const (
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
-	// ApiBase = "https://staging.deferpanic.com/" + ApiVersion
-	// ApiBase = "http://localhost:8080/" + ApiVersion
 
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion
