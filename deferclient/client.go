@@ -5,16 +5,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"runtime"
 	"runtime/debug"
 	"strings"
+	"sync"
 )
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.14"
+	ApiVersion = "v1.15"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
@@ -24,6 +26,9 @@ const (
 
 	// errorsUrl is the url to post panics && errors to
 	errorsUrl = ApiBase + "/panics/create"
+
+	// traceUrl is the url to post traces to
+	traceUrl = ApiBase + "/uploads/trace/create"
 )
 
 // being DEPRECATED
@@ -51,6 +56,9 @@ type DeferPanicClient struct {
 	Agent       *Agent
 	NoPost      bool
 	PrintPanics bool
+
+	RunningCommands map[int]bool
+	sync.Mutex
 }
 
 // struct that holds expected json body for POSTing to deferpanic API
@@ -60,16 +68,23 @@ type DeferJSON struct {
 	SpanId    int64  `json:"SpanId,omitempty"`
 }
 
+// struct that holds list of commands to be executed and agent state at server
+type Response struct {
+	Agent    Agent     `json:"AgentID"`
+	Commands []Command `json:"Commands,omitempty"`
+}
+
 // NewDeferPanicClient instantiates and returns a new deferpanic client
 func NewDeferPanicClient(token string) *DeferPanicClient {
 	a := NewAgent()
 
 	dc := &DeferPanicClient{
-		Token:       token,
-		UserAgent:   "deferclient " + ApiVersion,
-		Agent:       a,
-		PrintPanics: false,
-		NoPost:      false,
+		Token:           token,
+		UserAgent:       "deferclient " + ApiVersion,
+		Agent:           a,
+		PrintPanics:     false,
+		NoPost:          false,
+		RunningCommands: make(map[int]bool),
 	}
 
 	return dc
@@ -187,12 +202,12 @@ func (c *DeferPanicClient) ShipTrace(exception string, errorstr string, spanId i
 		log.Println(err)
 	}
 
-	c.Postit(b, errorsUrl)
+	c.Postit(b, errorsUrl, false)
 }
 
 // Postit Posts an API request w/b body to url and sets appropriate
 // headers
-func (c *DeferPanicClient) Postit(b []byte, url string) {
+func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err := fmt.Sprintf("%q", rec)
@@ -229,6 +244,32 @@ func (c *DeferPanicClient) Postit(b []byte, url string) {
 	case 503:
 		log.Println("service not available")
 	default:
+	}
+
+	if analyseResponse {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		var response Response
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		for _, command := range response.Commands {
+			c.Lock()
+			running := c.RunningCommands[command.Id]
+			c.Unlock()
+			if !running {
+				if command.GenerateTrace {
+					go c.MakeTrace(command.Id, &response.Agent)
+				}
+			}
+		}
 	}
 
 }

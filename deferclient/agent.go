@@ -21,6 +21,8 @@ type Agent struct {
 	Totalmem   uint64 `json:"totalmem"`
 	Govers     string `json:"govers"`
 	ApiVersion string `json:"ApiVersion"`
+	CRC32      uint32 `json:"CRC32"`
+	Size       int64  `json:"Size"`
 }
 
 // SetName sets a 'unique'ish id for this agent
@@ -56,6 +58,8 @@ func NewAgent() *Agent {
 		Totalmem:   m.Total,
 		Govers:     runtime.Version(),
 		ApiVersion: ApiVersion,
+		CRC32:      0,
+		Size:       0,
 	}
 
 	a.SetName()
