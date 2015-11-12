@@ -8,21 +8,21 @@ import (
 	"net/http"
 )
 
+var spanId int64
+
 type ContextHandler interface {
 	ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request)
 }
 
 type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
 
-func (h ContextHandlerFunc) ServeHTTPContext(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-	h(ctx, rw, req)
+func (h ContextHandlerFunc) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, req *http.Request) {
+	h(ctx, w, req)
 }
 
-func middleware(h ContextHandler) ContextHandler {
-	return ContextHandlerFunc(func(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-		//		ctx = newContextWithRequestID(ctx, req)
-		h.ServeHTTPContext(ctx, rw, req)
-	})
+func newContextWithSpanID(ctx context.Context, req *http.Request) context.Context {
+	spanId++
+	return context.WithValue(ctx, "spanId", spanId)
 }
 
 // HTTPContextHandlerFunc wraps a http handler func and captures the latency of each
@@ -37,20 +37,20 @@ func (c *Client) HTTPContextHandlerFunc(f ContextHandlerFunc) ContextHandlerFunc
 // this currently happens in a global list :( - TBFS
 func (c *Client) HTTPContextHandler(f ContextHandler) ContextHandler {
 	return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		startTime, tracer, headers := c.BeforeRequest(w, r)
-
+		//		startTime, tracer, headers := c.BeforeRequest(w, r)
+		ctx = newContextWithSpanID(ctx, r)
 		defer func() {
 			if err := recover(); err != nil {
-				c.BaseClient.Prep(err, tracer.SpanId)
-				c.AfterRequest(startTime, tracer, r, headers, 500, true)
+				c.BaseClient.Prep(err, spanId /*tracer.SpanId*/)
+				//				c.AfterRequest(startTime, tracer, r, headers, 500, true)
 
 				errorMsg := fmt.Sprintf("%v", err)
 				WritePanicResponse(w, r, errorMsg)
 			}
 		}()
 
-		f.ServeHTTPContext(ctx, tracer, r)
+		f.ServeHTTPContext(ctx, w, r)
 
-		c.AfterRequest(startTime, tracer, r, headers, tracer.Status(), false)
+		//		c.AfterRequest(startTime, tracer, r, headers, tracer.Status(), false)
 	})
 }
