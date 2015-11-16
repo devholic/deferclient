@@ -157,7 +157,7 @@ type tracingResponseWriter interface {
 	Size() int
 }
 
-// responseTracer implements a responsewriter with spanId/parentSpanId
+// ResponseTracer implements a responsewriter with SpanId/ParentSpanId
 type ResponseTracer struct {
 	w            http.ResponseWriter
 	status       int
@@ -222,7 +222,7 @@ func appendHTTP(startTime time.Time, path string, method string, status_code int
 
 }
 
-// GetSpanIdString is a conveinence method to get the string equivalent
+// GetSpanIdString is a convenience method to get the string equivalent
 // of a span id
 func GetSpanIdString(r http.ResponseWriter) string {
 	return strconv.FormatInt(GetSpanId(r), 10)
@@ -239,10 +239,12 @@ func (l *ResponseTracer) newId() int64 {
 	return r.Int63()
 }
 
+// Header is implementaion of standard http ResponseWriter Header method
 func (l *ResponseTracer) Header() http.Header {
 	return l.w.Header()
 }
 
+// Write is implementaion of standard http ResponseWriter Header method and setting the size and status
 func (l *ResponseTracer) Write(b []byte) (int, error) {
 	if l.status == 0 {
 		// The status will be StatusOK if WriteHeader has not been
@@ -265,6 +267,7 @@ func (l *ResponseTracer) Status() int {
 	return l.status
 }
 
+// Size returns the HTTP size
 func (l *ResponseTracer) Size() int {
 	return l.size
 }
@@ -299,6 +302,7 @@ func (c *Client) HTTPHandler(f http.Handler) http.Handler {
 	})
 }
 
+// BeforeRequest is called before request processing in handler
 func (c *Client) BeforeRequest(w http.ResponseWriter, r *http.Request) (
 	startTime time.Time, tracer *ResponseTracer, headers map[string]string) {
 	startTime = time.Now()
@@ -322,6 +326,7 @@ func (c *Client) BeforeRequest(w http.ResponseWriter, r *http.Request) (
 	return startTime, tracer, headers
 }
 
+// AfterRequest is called after request processing in handler
 func (c *Client) AfterRequest(startTime time.Time, tracer *ResponseTracer, r *http.Request,
 	headers map[string]string, status_code int, isproblem bool) {
 	appendHTTP(startTime, r.URL.Path, r.Method, status_code, tracer.SpanId,
