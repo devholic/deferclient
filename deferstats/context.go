@@ -3,8 +3,6 @@
 package deferstats
 
 import (
-	"fmt"
-	"golang.org/x/net/context"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -12,47 +10,10 @@ import (
 	"time"
 )
 
-// ContextHandler is based standard http Handler inteface
-type ContextHandler interface {
-	ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request)
-}
-
-// ContextHandlerFunc is based standard http Handler func
-type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
-
-// ServeHTTPContext is implementation of context based standard http Handler
-func (h ContextHandlerFunc) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, req *http.Request) {
-	h(ctx, w, req)
-}
-
 // ContextTracer passes spanId/parentSpanId parameters using context
 type ContextTracer struct {
 	SpanId       int64
 	ParentSpanId int64
-}
-
-// GetContextSpanIdString is a convenience method to get the string equivalent
-// of a span id from context
-func GetContextSpanIdString(ctx context.Context) string {
-	return strconv.FormatInt(GetContextSpanId(ctx), 10)
-}
-
-// GetContextSpanId returns the span id from this context
-func GetContextSpanId(ctx context.Context) int64 {
-	mPtr := (ctx.Value("ContextTracer")).(*ContextTracer)
-	return mPtr.SpanId
-}
-
-// GetContextParentSpanIdString is a convenience method to get the string equivalent
-// of a parent span id from context
-func GetContextParentSpanIdString(ctx context.Context) string {
-	return strconv.FormatInt(GetContextParentSpanId(ctx), 10)
-}
-
-// GetContextParentSpanId returns the parent span id from this context
-func GetContextParentSpanId(ctx context.Context) int64 {
-	mPtr := (ctx.Value("ContextTracer")).(*ContextTracer)
-	return mPtr.ParentSpanId
 }
 
 func (t *ContextTracer) newId() int64 {
@@ -100,37 +61,6 @@ func (e *ResponseWriterExt) Size() int {
 	return e.size
 }
 
-// HTTPContextHandlerFunc wraps a http handler func and captures the latency of each
-// request
-// this currently happens in a global list :( - TBFS
-func (c *Client) HTTPContextHandlerFunc(f ContextHandlerFunc) ContextHandlerFunc {
-	return c.HTTPContextHandler(f).(ContextHandlerFunc)
-}
-
-// HTTPContextHandler wraps a http handler and captures the latency of each
-// request
-// this currently happens in a global list :( - TBFS
-func (c *Client) HTTPContextHandler(f ContextHandler) ContextHandler {
-	return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		startTime, ext, tracer, headers := c.ContextBeforeRequest(w, r)
-		ctx = context.WithValue(ctx, "ContextTracer", tracer)
-
-		defer func() {
-			if err := recover(); err != nil {
-				c.BaseClient.Prep(err, tracer.SpanId)
-				c.ContextAfterRequest(startTime, tracer, r, headers, 500, true)
-
-				errorMsg := fmt.Sprintf("%v", err)
-				WritePanicResponse(w, r, errorMsg)
-			}
-		}()
-
-		f.ServeHTTPContext(ctx, ext, r)
-
-		c.ContextAfterRequest(startTime, tracer, r, headers, ext.Status(), false)
-	})
-}
-
 // ContextBeforeRequest is called before request processing in context handler
 func (c *Client) ContextBeforeRequest(w http.ResponseWriter, r *http.Request) (
 	startTime time.Time, ext *ResponseWriterExt, tracer *ContextTracer, headers map[string]string) {
@@ -162,4 +92,24 @@ func (c *Client) ContextAfterRequest(startTime time.Time, tracer *ContextTracer,
 	headers map[string]string, status_code int, isproblem bool) {
 	appendHTTP(startTime, r.URL.Path, r.Method, status_code, tracer.SpanId,
 		tracer.ParentSpanId, isproblem, headers)
+}
+
+// GetStatsURL returns statistics submitting URL
+func (c *Client) GetStatsURL() (statsurl string) {
+	return c.statsUrl
+}
+
+// SetStatsURL sets statistics submitting URL
+func (c *Client) SetStatsURL(statsurl string) {
+	c.statsUrl = statsurl
+}
+
+// ResetHTTPStats clears the current list of HTTP statistics
+func ResetHTTPStats() {
+	curlist.Reset()
+}
+
+// GetHTTPStats returns the current list of HTTP statistics
+func GetHTTPStats() (deferhttps []DeferHTTP) {
+	return curlist.List()
 }
