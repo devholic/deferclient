@@ -27,6 +27,9 @@ const (
 	// errorsUrl is the url to post panics && errors to
 	errorsUrl = ApiBase + "/panics/create"
 
+	// cpuprofileUrl is the url to post cpuprofiles to
+	cpuprofileUrl = ApiBase + "/uploads/cpuprofile/create"
+
 	// traceUrl is the url to post traces to
 	traceUrl = ApiBase + "/uploads/trace/create"
 )
@@ -61,14 +64,14 @@ type DeferPanicClient struct {
 	sync.Mutex
 }
 
-// struct that holds expected json body for POSTing to deferpanic API
+// DeferJSON is a struct that holds json body for POSTing to deferpanic API
 type DeferJSON struct {
 	Msg       string `json:"ErrorName"`
 	BackTrace string `json:"Body"`
 	SpanId    int64  `json:"SpanId,omitempty"`
 }
 
-// struct that holds list of commands to be executed and agent state at server
+// Response is a struct that holds list of commands to be executed and agent state at server
 type Response struct {
 	Agent    Agent     `json:"AgentID"`
 	Commands []Command `json:"Commands,omitempty"`
@@ -90,7 +93,7 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 	return dc
 }
 
-// Persists ensures any panics will post to deferpanic website for
+// Persist ensures any panics will post to deferpanic website for
 // tracking
 // typically used in non http go-routines
 func (c *DeferPanicClient) Persist() {
@@ -265,11 +268,15 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 			running := c.RunningCommands[command.Id]
 			c.Unlock()
 			if !running {
-				if command.GenerateTrace {
+				switch command.Type {
+				case CommandTypeTrace:
 					go c.MakeTrace(command.Id, &response.Agent)
+				case CommandTypeCpuprofile:
+					go c.MakeCPUProfile(command.Id, &response.Agent)
+				default:
+					log.Printf("Unknown command %v\n", command.Type)
 				}
 			}
 		}
 	}
-
 }
