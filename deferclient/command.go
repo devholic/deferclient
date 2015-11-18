@@ -8,8 +8,8 @@ const (
 	CommandTypeTrace CommandType = iota + 1
 	// CommandTypeBlockprofile is a command for generating block profile
 	CommandTypeBlockprofile
-	// CommandTypeCpuprofile is a command for generating cpu profile
-	CommandTypeCpuprofile
+	// CommandTypeCPUProfile is a command for generating cpu profile
+	CommandTypeCPUProfile
 	// CommandTypeMemprofile is a command for generating memory profile
 	CommandTypeMemprofile
 )

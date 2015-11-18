@@ -16,7 +16,7 @@ import (
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.15"
+	ApiVersion = "v1.16"
 
 	// ApiBase is the base url that client requests goto
 	ApiBase = "https://api.deferpanic.com/" + ApiVersion
@@ -271,7 +271,7 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 				switch command.Type {
 				case CommandTypeTrace:
 					go c.MakeTrace(command.Id, &response.Agent)
-				case CommandTypeCpuprofile:
+				case CommandTypeCPUProfile:
 					go c.MakeCPUProfile(command.Id, &response.Agent)
 				default:
 					log.Printf("Unknown command %v\n", command.Type)
