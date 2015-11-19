@@ -5,12 +5,12 @@ import (
 )
 
 func TestNewCommand(t *testing.T) {
-	c := NewCommand(1, COMMAND_TYPE_TRACE, false, true)
+	c := NewCommand(1, CommandTypeTrace, false, true)
 
 	if c.Id != 1 {
 		t.Error("not creating Id field")
 	}
-	if c.Type != COMMAND_TYPE_TRACE {
+	if c.Type != CommandTypeTrace {
 		t.Error("not creating Type field")
 	}
 	if c.Requested != false {
