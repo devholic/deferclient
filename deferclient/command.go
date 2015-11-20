@@ -6,12 +6,12 @@ type CommandType byte
 const (
 	// CommandTypeTrace is a command for generating traces
 	CommandTypeTrace CommandType = iota + 1
-	// CommandTypeBlockprofile is a command for generating block profile
-	CommandTypeBlockprofile
+	// CommandTypeBlockProfile is a command for generating block profile
+	CommandTypeBlockProfile
 	// CommandTypeCPUProfile is a command for generating cpu profile
 	CommandTypeCPUProfile
-	// CommandTypeMemprofile is a command for generating memory profile
-	CommandTypeMemprofile
+	// CommandTypeMemProfile is a command for generating memory profile
+	CommandTypeMemProfile
 )
 
 // Command contains information about this client's command, that has to be executed

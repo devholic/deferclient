@@ -30,6 +30,9 @@ const (
 	// cpuprofileUrl is the url to post cpuprofiles to
 	cpuprofileUrl = ApiBase + "/uploads/cpuprofile/create"
 
+	// memprofileUrl is the url to post memprofiles to
+	memprofileUrl = ApiBase + "/uploads/memprofile/create"
+
 	// traceUrl is the url to post traces to
 	traceUrl = ApiBase + "/uploads/trace/create"
 )
@@ -273,6 +276,8 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 					go c.MakeTrace(command.Id, &response.Agent)
 				case CommandTypeCPUProfile:
 					go c.MakeCPUProfile(command.Id, &response.Agent)
+				case CommandTypeMemProfile:
+					go c.MakeMemProfile(command.Id, &response.Agent)
 				default:
 					log.Printf("Unknown command %v\n", command.Type)
 				}
