@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// MakeTrace POST a Trace html to the deferpanic website
+// MakeTrace POST Trace binaries to the deferpanic website
 func (c *DeferPanicClient) MakeTrace(commandId int, agent *Agent) {
 	var buf []byte
 	buffer := bytes.NewBuffer(buf)

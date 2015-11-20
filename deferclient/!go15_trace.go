@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-// MakeTrace POST a Trace html to the deferpanic website
+// MakeTrace POST Trace binaries to the deferpanic website
 func (c *DeferPanicClient) MakeTrace(commandId int, agent *Agent) {
 	c.Lock()
 	c.RunningCommands[commandId] = true

@@ -1,21 +1,35 @@
 package deferclient
 
+// CommandType defines command list supported by the clinet
+type CommandType byte
+
+const (
+	// CommandTypeTrace is a command for generating traces
+	CommandTypeTrace CommandType = iota + 1
+	// CommandTypeBlockProfile is a command for generating block profile
+	CommandTypeBlockProfile
+	// CommandTypeCPUProfile is a command for generating cpu profile
+	CommandTypeCPUProfile
+	// CommandTypeMemProfile is a command for generating memory profile
+	CommandTypeMemProfile
+)
+
 // Command contains information about this client's command, that has to be executed
 type Command struct {
-	Id            int  `json:"Id"`
-	GenerateTrace bool `json:"GenerateTrace"`
-	Requested     bool `json:"Requested"`
-	Executed      bool `json:"Executed"`
+	Id        int         `json:"Id"`
+	Type      CommandType `json:"Type"`
+	Requested bool        `json:"Requested"`
+	Executed  bool        `json:"Executed"`
 }
 
 // NewCommand instantitates and returns a new command
 // it is meant to be called once before the executing client's command
-func NewCommand(id int, generatetrace bool, requested bool, executed bool) *Command {
+func NewCommand(id int, commandtype CommandType, requested bool, executed bool) *Command {
 	c := &Command{
-		Id:            id,
-		GenerateTrace: generatetrace,
-		Requested:     requested,
-		Executed:      executed,
+		Id:        id,
+		Type:      commandtype,
+		Requested: requested,
+		Executed:  executed,
 	}
 
 	return c
