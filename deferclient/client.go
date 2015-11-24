@@ -16,10 +16,11 @@ import (
 
 const (
 	// ApiVersion is the version of this client
-	ApiVersion = "v1.16"
+	ApiVersion = "v1.17"
 
 	// ApiBase is the base url that client requests goto
-	ApiBase = "https://api.deferpanic.com/" + ApiVersion
+	// ApiBase = "https://api.deferpanic.com/" + ApiVersion
+	ApiBase = "http://localhost:8080/" + ApiVersion
 
 	// UserAgent is the User Agent that is used with this client
 	UserAgent = "deferclient " + ApiVersion

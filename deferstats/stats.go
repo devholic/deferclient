@@ -29,6 +29,7 @@ type DeferStats struct {
 	GoRoutines string           `json:"GoRoutines"`
 	Cgos       string           `json:"Cgos"`
 	Fds        string           `json:"Fds"`
+	Expvars    string           `json:"Expvars"`
 	HTTPs      []HTTPPercentile `json:"HTTPs,omitempty"`
 	DBs        []DeferDB        `json:"DBs,omitempty"`
 	Rpms       Rpm              `json:"RPMs,omitempty"`
@@ -61,6 +62,9 @@ type Client struct {
 	// GrabHTTP determines if we should grab http requests
 	GrabHTTP bool
 
+	// GrabExpvar determines if we should grab expvar
+	GrabExpvar bool
+
 	// LastGC keeps track of the last GC run
 	LastGC int64
 
@@ -82,6 +86,12 @@ type Client struct {
 	// for dev/test envs
 	noPost bool
 
+	// ExpvarHost is expvar host
+	ExpvarHost string
+
+	// ExpvarEndpoint is expvar endpoint in applicaton
+	ExpvarEndpoint string
+
 	// BaseClient is the base deferpanic client that all http requests use
 	BaseClient *deferclient.DeferPanicClient
 }
@@ -98,10 +108,12 @@ func NewClient(token string) *Client {
 		GrabCgo:        true,
 		GrabFd:         true,
 		GrabHTTP:       true,
+		GrabExpvar:     false,
 		Verbose:        false,
 		Token:          token,
 		environment:    "production",
 		appGroup:       "default",
+		ExpvarEndpoint: "/debug/vars",
 		noPost:         false,
 	}
 
@@ -225,6 +237,9 @@ func (c *Client) capture() {
 		DBs:        Querylist.List(),
 	}
 
+	// reset dbs
+	Querylist.Reset()
+
 	if c.GrabHTTP {
 		dhs := curlist.List()
 		ds.HTTPs = getHTTPPercentiles(dhs)
@@ -235,14 +250,19 @@ func (c *Client) capture() {
 		rpms.ResetRPM()
 	}
 
+	if c.GrabExpvar {
+		expvars, err := c.GetExpvar()
+		if err != nil {
+			log.Println(err)
+		}
+		ds.Expvars = expvars
+	}
+
 	if lastgc != c.LastGC {
 		c.LastGC = lastgc
 		ds.LastGC = strconv.FormatInt(c.LastGC, 10)
 		ds.LastPause = strconv.FormatInt(gc.Pause[0].Nanoseconds(), 10)
 	}
-
-	// reset dbs
-	Querylist.Reset()
 
 	go func() {
 		defer func() {
