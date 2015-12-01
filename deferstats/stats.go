@@ -86,6 +86,9 @@ type Client struct {
 	// for dev/test envs
 	noPost bool
 
+	// GetExpvar captures expvar using Do method
+	GetExpvar func() (string, error)
+
 	// BaseClient is the base deferpanic client that all http requests use
 	BaseClient *deferclient.DeferPanicClient
 }
@@ -108,6 +111,10 @@ func NewClient(token string) *Client {
 		environment:    "production",
 		appGroup:       "default",
 		noPost:         false,
+	}
+
+	ds.GetExpvar = func() (string, error) {
+		return "", nil
 	}
 
 	ds.BaseClient = deferclient.NewDeferPanicClient(token)

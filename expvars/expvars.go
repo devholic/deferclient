@@ -1,12 +1,12 @@
-package deferstats
+package expvars
 
 import (
 	"expvar"
 	"fmt"
 )
 
-// GetExpvar captures expvar using Do method
-func (c *Client) GetExpvar() (string, error) {
+// GetByDo takes expvar map using Do method from expvar package
+func GetByDo() (string, error) {
 	result := "{"
 	first := true
 	expvar.Do(func(kv expvar.KeyValue) {
