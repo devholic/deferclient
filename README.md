@@ -31,6 +31,9 @@ Defer Panic Client Lib.
 
     and more automatically in your own dashboard.
 
+ *  **Expvar** - Got expvars already in your app - we support it out of
+    the box.
+
  *  **Custom K/V** - Got something we don't support? You can log your own k/v metrics just as easily.
     Use this [client](https://github.com/deferpanic/dpkv).
 
@@ -189,6 +192,55 @@ We have additional database ORM wrappers:
  *  [sqlx](https://github.com/deferpanic/dpsqlx)
  *  [mgo](https://github.com/deferpanic/dpmgo)
  *  [gorm](https://github.com/deferpanic/dpgorm)
+
+### Expvars Sample
+
+```
+package main
+
+import (
+  "expvar"
+  "fmt"
+  "github.com/deferpanic/deferclient/deferstats"
+  "github.com/deferpanic/deferclient/expvars"
+  "io"
+  "net/http"
+)
+
+var (
+  counter     int64
+  inthits     = expvar.NewInt("inthits")
+  floathints  = expvar.NewFloat("floathints")
+  stringhints = expvar.NewString("stringhits")
+  maphints    = expvar.NewMap("maphints")
+)
+
+func init() {
+  maphints.Set("int", inthits)
+  maphints.Set("float", floathints)
+  maphints.Set("string", stringhints)
+}
+
+func hit(w http.ResponseWriter, r *http.Request) {
+  counter++
+  inthits.Set(counter)
+  floathints.Set(float64(counter * 2))
+  stringhints.Set(fmt.Sprintf("%v", counter*3))
+  io.WriteString(w, fmt.Sprintf("%v", counter))
+}
+
+func main() {
+  dps := deferstats.NewClient("v00L0K6CdKjE4QwX5DL1iiODxovAHUfo")
+
+  dps.GrabExpvar = true
+  dps.GetExpvar = expvars.GetByDo
+
+  go dps.CaptureStats()
+
+  http.HandleFunc("/hit", hit)
+  http.ListenAndServe(":8000", nil)
+}
+```
 
 ### Micro-Services/SOA Tracing
 
