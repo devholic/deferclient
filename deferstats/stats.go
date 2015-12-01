@@ -86,12 +86,6 @@ type Client struct {
 	// for dev/test envs
 	noPost bool
 
-	// ExpvarHost is expvar host
-	ExpvarHost string
-
-	// ExpvarEndpoint is expvar endpoint in applicaton
-	ExpvarEndpoint string
-
 	// BaseClient is the base deferpanic client that all http requests use
 	BaseClient *deferclient.DeferPanicClient
 }
@@ -113,7 +107,6 @@ func NewClient(token string) *Client {
 		Token:          token,
 		environment:    "production",
 		appGroup:       "default",
-		ExpvarEndpoint: "/debug/vars",
 		noPost:         false,
 	}
 
