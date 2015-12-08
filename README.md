@@ -429,4 +429,9 @@ Defer Panic Client
 ### FAQ
 
 Q: Does this support websockets yet?
+
 A: No but we are open to discussing what this would look like.
+
+Q: Do you all support Google App Engine?
+
+A: Not at this time but we do support Google Compute Engine.
