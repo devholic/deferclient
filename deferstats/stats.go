@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 	"runtime"
 	"runtime/debug"
 	"strconv"
@@ -123,6 +125,17 @@ func NewClient(token string) *Client {
 	ds.BaseClient.NoPost = ds.noPost
 
 	return ds
+}
+
+// SetHttpProxy overrides the default httpclient
+// with a proxy client with user given address
+func (c *Client) SetHttpProxy(urlString string) error {
+	proxyURL, err := url.Parse(urlString)
+	if err != nil {
+		return err
+	}
+	c.BaseClient.HttpClient = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	return nil
 }
 
 // Setenvironment sets the environment

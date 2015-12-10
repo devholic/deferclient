@@ -63,6 +63,8 @@ type DeferPanicClient struct {
 	NoPost      bool
 	PrintPanics bool
 
+	HttpClient *http.Client
+
 	RunningCommands map[int]bool
 	sync.Mutex
 }
@@ -91,6 +93,7 @@ func NewDeferPanicClient(token string) *DeferPanicClient {
 		PrintPanics:     false,
 		NoPost:          false,
 		RunningCommands: make(map[int]bool),
+		HttpClient:      &http.Client{},
 	}
 
 	return dc
@@ -234,8 +237,7 @@ func (c *DeferPanicClient) Postit(b []byte, url string, analyseResponse bool) {
 	req.Header.Set("X-dpgroup", c.AppGroup)
 	req.Header.Set("X-dpagentid", c.Agent.Name)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		log.Println(err)
 		return
